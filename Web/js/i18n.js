@@ -81,7 +81,26 @@ window.EX = window.EX || {};
     'err.busy': 'Máy chủ đang bận. Vui lòng thử lại',
     'err.insufficient_storage': 'Bộ nhớ máy chủ không đủ dung lượng',
     'err.internal_error': 'Lỗi nội bộ máy chủ',
-    'err.unknown': 'Đã xảy ra lỗi không xác định'
+    'err.unknown': 'Đã xảy ra lỗi không xác định',
+    'top.settings': 'Cài đặt',
+    'upload.title': 'Tải lên',
+    'upload.compressing': 'Đang nén ảnh...',
+    'upload.uploading': 'Đang tải lên',
+    'upload.processing': 'Đang xử lý...',
+    'upload.done': 'Đã hoàn tất',
+    'upload.error': 'Lỗi tải lên',
+    'upload.canceled': 'Đã hủy',
+    'upload.cancel_all': 'Hủy tất cả',
+    'upload.clear_done': 'Xóa đã xong',
+    'upload.drop_hint': 'Thả file hoặc thư mục vào đây để tải lên',
+    'upload.confirm_leave': 'Đang có file được tải lên. Nếu rời đi quá trình tải lên sẽ bị gián đoạn.',
+    'upload.folder': 'Tải thư mục lên',
+    'settings.title': 'Cài đặt',
+    'settings.img_compress': 'Nén ảnh JPEG trước khi tải lên',
+    'settings.max_edge': 'Cạnh dài tối đa',
+    'settings.quality': 'Chất lượng',
+    'settings.keep_orig': 'Giữ nguyên',
+    'settings.exif_warning': 'Lưu ý: Quá trình nén sẽ loại bỏ thông tin EXIF.'
   };
 
   const en = {
@@ -160,7 +179,26 @@ window.EX = window.EX || {};
     'err.busy': 'Server busy. Please try again',
     'err.insufficient_storage': 'Insufficient storage on server',
     'err.internal_error': 'Internal server error',
-    'err.unknown': 'An unknown error occurred'
+    'err.unknown': 'An unknown error occurred',
+    'top.settings': 'Settings',
+    'upload.title': 'Uploads',
+    'upload.compressing': 'Compressing image...',
+    'upload.uploading': 'Uploading',
+    'upload.processing': 'Processing...',
+    'upload.done': 'Completed',
+    'upload.error': 'Upload error',
+    'upload.canceled': 'Canceled',
+    'upload.cancel_all': 'Cancel all',
+    'upload.clear_done': 'Clear completed',
+    'upload.drop_hint': 'Drop files or folders here to upload',
+    'upload.confirm_leave': 'Uploads are currently in progress. Leaving will interrupt them.',
+    'upload.folder': 'Upload folder',
+    'settings.title': 'Settings',
+    'settings.img_compress': 'Compress JPEG images before upload',
+    'settings.max_edge': 'Max dimension',
+    'settings.quality': 'Quality',
+    'settings.keep_orig': 'Keep original',
+    'settings.exif_warning': 'Note: Compression strips EXIF metadata.'
   };
 
   const tables = { vi, en };

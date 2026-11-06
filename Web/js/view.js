@@ -32,6 +32,49 @@ window.EX = window.EX || {};
       EX.renderItems()
     );
 
+    // Drag-and-drop upload zone on mainArea
+    let dragCounter = 0;
+    const dropOverlay = h('div', { class: 'drop-overlay', style: { display: 'none' } },
+      h('div', { class: 'drop-overlay-icon' }, '📥'),
+      h('div', { class: 'drop-overlay-text' }, EX.t('upload.drop_hint'))
+    );
+    mainArea.appendChild(dropOverlay);
+
+    mainArea.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      dropOverlay.style.display = 'flex';
+    });
+
+    mainArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    mainArea.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        dropOverlay.style.display = 'none';
+      }
+    });
+
+    mainArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dropOverlay.style.display = 'none';
+
+      if (e.dataTransfer && e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+        if (EX.upload && typeof EX.upload.enqueueEntries === 'function') {
+          EX.upload.enqueueEntries(e.dataTransfer.items, EX.state.parent);
+        }
+      } else if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        if (EX.upload && typeof EX.upload.enqueue === 'function') {
+          EX.upload.enqueue(Array.from(e.dataTransfer.files), EX.state.parent);
+        }
+      }
+    });
+
     bodyContainer.appendChild(sidebar);
     bodyContainer.appendChild(mainArea);
 
@@ -100,6 +143,12 @@ window.EX = window.EX || {};
       }
     }, '◐');
 
+    const settingsBtn = h('button', {
+      class: 'btn btn-icon',
+      title: EX.t('top.settings'),
+      onclick: () => EX.openSettingsDialog()
+    }, '⚙');
+
     const logoutBtn = h('button', {
       class: 'btn btn-icon',
       title: EX.t('nav.logout'),
@@ -115,7 +164,7 @@ window.EX = window.EX || {};
     return h('header', { class: 'app-topbar' },
       h('div', { class: 'topbar-left' }, mobileMenuBtn, brand),
       h('div', { class: 'topbar-center' }, searchInput),
-      h('div', { class: 'topbar-right' }, viewToggleBtn, langToggleBtn, themeToggleBtn, logoutBtn)
+      h('div', { class: 'topbar-right' }, viewToggleBtn, langToggleBtn, themeToggleBtn, settingsBtn, logoutBtn)
     );
   };
 
@@ -286,10 +335,34 @@ window.EX = window.EX || {};
       });
       bar.appendChild(fileInput);
 
+      // Hidden folder input for directory upload
+      const folderInput = h('input', {
+        type: 'file',
+        webkitdirectory: '',
+        directory: '',
+        multiple: true,
+        style: { display: 'none' },
+        onchange: (e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            if (EX.upload && typeof EX.upload.enqueue === 'function') {
+              EX.upload.enqueue(Array.from(e.target.files), EX.state.parent);
+            }
+          }
+          e.target.value = '';
+        }
+      });
+      bar.appendChild(folderInput);
+
       bar.appendChild(h('button', {
         class: 'btn btn-primary',
         onclick: () => fileInput.click()
       }, '↑ ' + EX.t('action.upload')));
+
+      bar.appendChild(h('button', {
+        class: 'btn',
+        title: EX.t('upload.folder'),
+        onclick: () => folderInput.click()
+      }, '📁 ' + EX.t('upload.folder')));
 
       bar.appendChild(h('button', {
         class: 'btn',
@@ -816,6 +889,92 @@ window.EX = window.EX || {};
             if (typeof onConfirm === 'function') onConfirm();
           }
         }, EX.t('action.delete'))
+      ));
+    });
+  };
+
+  EX.openSettingsDialog = function () {
+    openModal(EX.t('settings.title'), (content, close) => {
+      const isCompress = typeof localStorage !== 'undefined' && localStorage.getItem('exv.imgCompress') === '1';
+      const curMaxEdge = (typeof localStorage !== 'undefined' ? localStorage.getItem('exv.maxEdge') : null) || '2560';
+      const curQuality = (typeof localStorage !== 'undefined' ? localStorage.getItem('exv.imgQuality') : null) || '0.82';
+      const curGridSize = (typeof localStorage !== 'undefined' ? localStorage.getItem('exv.gridSize') : null) || 'M';
+      const curFit = (typeof localStorage !== 'undefined' ? localStorage.getItem('exv.fit') : null) || 'contain';
+
+      const compressCheck = h('input', { type: 'checkbox', id: 'setting-compress', checked: isCompress });
+      const compressLabel = h('label', { for: 'setting-compress', class: 'setting-checkbox-label' }, EX.t('settings.img_compress'));
+
+      const maxEdgeSelect = h('select', { class: 'form-input' },
+        h('option', { value: '1280', selected: curMaxEdge === '1280' }, '1280 px'),
+        h('option', { value: '1920', selected: curMaxEdge === '1920' }, '1920 px'),
+        h('option', { value: '2560', selected: curMaxEdge === '2560' }, '2560 px (default)'),
+        h('option', { value: '0', selected: curMaxEdge === '0' }, EX.t('settings.keep_orig'))
+      );
+
+      const qualitySelect = h('select', { class: 'form-input' },
+        h('option', { value: '0.7', selected: curQuality === '0.7' }, '0.70'),
+        h('option', { value: '0.8', selected: curQuality === '0.8' }, '0.80'),
+        h('option', { value: '0.82', selected: curQuality === '0.82' }, '0.82 (default)'),
+        h('option', { value: '0.85', selected: curQuality === '0.85' }, '0.85')
+      );
+
+      const gridSizeSelect = h('select', { class: 'form-input' },
+        h('option', { value: 'S', selected: curGridSize === 'S' }, 'S (96px)'),
+        h('option', { value: 'M', selected: curGridSize === 'M' }, 'M (160px)'),
+        h('option', { value: 'L', selected: curGridSize === 'L' }, 'L (240px)')
+      );
+
+      const fitSelect = h('select', { class: 'form-input' },
+        h('option', { value: 'contain', selected: curFit === 'contain' }, 'Contain'),
+        h('option', { value: 'cover', selected: curFit === 'cover' }, 'Cover')
+      );
+
+      const compressGroup = h('div', { class: 'form-group' },
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, compressCheck, compressLabel),
+        h('div', { class: 'form-hint' }, EX.t('settings.exif_warning'))
+      );
+
+      const maxEdgeGroup = h('div', { class: 'form-group' },
+        h('label', {}, EX.t('settings.max_edge')),
+        maxEdgeSelect
+      );
+
+      const qualityGroup = h('div', { class: 'form-group' },
+        h('label', {}, EX.t('settings.quality')),
+        qualitySelect
+      );
+
+      const gridGroup = h('div', { class: 'form-group' },
+        h('label', {}, `${EX.t('top.view_grid')}: Size`),
+        gridSizeSelect
+      );
+
+      const fitGroup = h('div', { class: 'form-group' },
+        h('label', {}, `${EX.t('top.view_grid')}: Fit`),
+        fitSelect
+      );
+
+      const submit = () => {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('exv.imgCompress', compressCheck.checked ? '1' : '0');
+          localStorage.setItem('exv.maxEdge', maxEdgeSelect.value);
+          localStorage.setItem('exv.imgQuality', qualitySelect.value);
+          localStorage.setItem('exv.gridSize', gridSizeSelect.value);
+          localStorage.setItem('exv.fit', fitSelect.value);
+        }
+        close();
+        EX.render();
+      };
+
+      content.appendChild(compressGroup);
+      content.appendChild(maxEdgeGroup);
+      content.appendChild(qualityGroup);
+      content.appendChild(gridGroup);
+      content.appendChild(fitGroup);
+
+      content.appendChild(h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn', onclick: close }, EX.t('action.cancel')),
+        h('button', { class: 'btn btn-primary', onclick: submit }, EX.t('action.save'))
       ));
     });
   };

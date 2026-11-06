@@ -18,7 +18,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T11 | API: upload, content, thumb | ☑ | Xanh | Upload initiation/chunks/finish/cancel, content download (raw Range + zlib streaming), thumbnail PUT/GET |
 | T12 | ZipWriter + endpoint | ☑ | Xanh | Stored ZIP archive streaming, VaultStore.zipEntries hierarchy, POST /api/zip, tested with macOS unzip -t |
 | T13 | CLI macOS + integration script | ☑ | Xanh | CLI executable, curl integration test suite in CI with ALL PASSED |
-| T14 | Web: shell, login, i18n, theme, danh sách | ☐ | | |
+| T14 | Web: shell, login, i18n, theme, danh sách | ☑ | Xanh | Web shell, login with rate limit countdown, symmetric i18n (vi/en), list/grid views, responsive design |
 | T15 | Web: upload chia khối, thumbnail, nén ảnh client | ☐ | | |
 | T16 | Web: chọn nhiều, đổi tên, nhãn, thùng rác, tìm kiếm, menu | ☐ | | |
 | T17 | Web: xem trước ảnh/video/pdf/text | ☐ | | |
