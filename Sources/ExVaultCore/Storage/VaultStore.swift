@@ -75,7 +75,7 @@ public struct StoreError: Error, CustomStringConvertible {
 }
 
 public final class VaultStore {
-    private let db: Database
+    let db: Database
     public static var nowMs: () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }
 
     public init(db: Database) {
@@ -572,7 +572,7 @@ public final class VaultStore {
         return Set(names)
     }
 
-    private func attachTags(to nodes: inout [Node]) throws {
+    func attachTags(to nodes: inout [Node]) throws {
         if nodes.isEmpty { return }
         var idToIndices: [String: [Int]] = [:]
         for (i, node) in nodes.enumerated() {

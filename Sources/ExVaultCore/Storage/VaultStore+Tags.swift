@@ -205,32 +205,7 @@ extension VaultStore {
             }
 
             // Attach tags
-            if !nodes.isEmpty {
-                var idToIndices: [String: [Int]] = [:]
-                for (i, node) in nodes.enumerated() {
-                    idToIndices[node.id, default: []].append(i)
-                }
-                let nodeIds = nodes.map { $0.id }
-                let chunkSize = 500
-                var start = 0
-                while start < nodeIds.count {
-                    let end = min(start + chunkSize, nodeIds.count)
-                    let chunk = Array(nodeIds[start..<end])
-                    let placeholders = [String](repeating: "?", count: chunk.count).joined(separator: ",")
-                    let tagBinds = chunk.map { SQLValue.text($0) }
-                    let tagSql = "SELECT node_id, tag_id FROM node_tags WHERE node_id IN (\(placeholders)) ORDER BY tag_id ASC;"
-                    _ = try db.query(tagSql, tagBinds) { row in
-                        let nid = row.text(0)
-                        let tid = row.int(1)
-                        if let indices = idToIndices[nid] {
-                            for idx in indices {
-                                nodes[idx].tagIds.append(tid)
-                            }
-                        }
-                    }
-                    start = end
-                }
-            }
+            try self.attachTags(to: &nodes)
 
             // Build pathText
             var pathCache: [String?: String] = [nil: "/"]
