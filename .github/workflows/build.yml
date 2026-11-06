@@ -1,0 +1,37 @@
+name: build
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  core:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift --version && xcodebuild -version
+      - run: swift build -c release
+      - run: swift test
+      - run: node scripts/check-i18n.js        # bỏ qua nếu chưa có Web/js/i18n.js (T14)
+        if: hashFiles('scripts/check-i18n.js') != ''
+      - run: bash scripts/integration.sh        # có từ T13
+        if: hashFiles('scripts/integration.sh') != ''
+  ios:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - run: |
+          xcodebuild -project ExVault.xcodeproj -scheme ExVault \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+      - run: |
+          APP=build/Build/Products/Release-iphoneos/ExVault.app
+          test -d "$APP"
+          /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP/Info.plist"
+          lipo -info "$APP/ExVault"
+          test -f "$APP/Web/index.html"
+          mkdir -p out/Payload && cp -R "$APP" out/Payload/
+          (cd out && zip -qry ExVault-unsigned.ipa Payload)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ExVault-unsigned-ipa
+          path: out/ExVault-unsigned.ipa
