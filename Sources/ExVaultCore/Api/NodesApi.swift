@@ -32,10 +32,54 @@ public enum NodesApi: ApiModule {
         let name: String
     }
 
+    public struct BreadcrumbItem: Codable {
+        public let id: String
+        public let name: String
+
+        public init(id: String, name: String) {
+            self.id = id
+            self.name = name
+        }
+    }
+
     private struct NodeListResponse: Codable {
         let parent: ParentInfo?
         let path: [BreadcrumbItem]
         let items: [Node]
+    }
+
+    private struct SearchNodeItem: Encodable {
+        let id: String
+        let parentId: String?
+        let kind: String
+        let name: String
+        let size: Int64
+        let storedSize: Int64
+        let mime: String
+        let codec: String
+        let hasThumb: Bool
+        let tagIds: [Int64]
+        let createdAt: Int64
+        let modifiedAt: Int64
+        let trashedAt: Int64?
+        let pathText: String
+
+        init(node: Node, pathText: String) {
+            self.id = node.id
+            self.parentId = node.parentId
+            self.kind = node.kind
+            self.name = node.name
+            self.size = node.size
+            self.storedSize = node.storedSize
+            self.mime = node.mime
+            self.codec = node.codec
+            self.hasThumb = node.hasThumb
+            self.tagIds = node.tagIds
+            self.createdAt = node.createdAt
+            self.modifiedAt = node.modifiedAt
+            self.trashedAt = node.trashedAt
+            self.pathText = pathText
+        }
     }
 
     public static func register(_ r: Router, _ ctx: ApiContext) {
@@ -55,11 +99,12 @@ public enum NodesApi: ApiModule {
 
             let sortStr = req.query["sort"] ?? "name"
             let orderStr = req.query["order"] ?? "asc"
-            let sortField = SortField(rawValue: sortStr.lowercased()) ?? .name
+            let sortKey = SortKey(rawValue: sortStr.lowercased()) ?? .name
             let sortOrder = SortOrder(rawValue: orderStr.lowercased()) ?? .asc
 
-            let items = try ctx.store.listChildren(parentId: parentId, sort: sortField, order: sortOrder)
-            let path = try ctx.store.breadcrumb(for: parentId)
+            let items = try ctx.store.listChildren(parentId: parentId, sort: sortKey, order: sortOrder)
+            let rawPath = try ctx.store.breadcrumb(of: parentId)
+            let path = rawPath.map { BreadcrumbItem(id: $0.id, name: $0.name) }
 
             var parentInfo: ParentInfo? = nil
             if let pId = parentId, let pNode = try ctx.store.getNode(pId) {
@@ -94,7 +139,7 @@ public enum NodesApi: ApiModule {
                 throw ApiError.notFound("Node not found")
             }
             let body = try ctx.json(req, RenameRequest.self)
-            let updated = try ctx.store.rename(nodeId: id, newName: body.name)
+            let updated = try ctx.store.rename(id, to: body.name)
             return HttpResponse.json(updated)
         }
 
@@ -105,7 +150,7 @@ public enum NodesApi: ApiModule {
                 throw ApiError.badRequest("Exceeded maximum batch limit of 5000 IDs")
             }
             let targetParent = (body.parentId == "root") ? nil : body.parentId
-            let moved = try ctx.store.move(nodeIds: body.ids, toParentId: targetParent)
+            let moved = try ctx.store.move(body.ids, to: targetParent)
             return HttpResponse.json(["items": moved])
         }
 
@@ -147,7 +192,7 @@ public enum NodesApi: ApiModule {
 
         // GET /api/trash
         r.add("GET", "/api/trash", auth: true) { _ in
-            let items = try ctx.store.listTrashRoot()
+            let items = try ctx.store.listTrash()
             return HttpResponse.json(["items": items])
         }
 
@@ -173,8 +218,9 @@ public enum NodesApi: ApiModule {
                 throw ApiError.badRequest("At least query parameter 'q' or 'tag' is required")
             }
 
-            let results = try ctx.store.search(query: (q?.isEmpty == true ? nil : q), tagId: tagId)
-            return HttpResponse.json(["items": results])
+            let results = try ctx.store.search(q: (q?.isEmpty == true ? nil : q), tagId: tagId)
+            let items = results.map { SearchNodeItem(node: $0.node, pathText: $0.pathText) }
+            return HttpResponse.json(["items": items])
         }
 
         // POST /api/nodes/tag
@@ -184,9 +230,9 @@ public enum NodesApi: ApiModule {
                 throw ApiError.badRequest("Exceeded maximum batch limit of 5000 IDs")
             }
             let updated = try ctx.store.applyTags(
-                nodeIds: body.ids,
-                addTagIds: body.add ?? [],
-                removeTagIds: body.remove ?? []
+                ids: body.ids,
+                add: body.add ?? [],
+                remove: body.remove ?? []
             )
             return HttpResponse.json(["items": updated])
         }
