@@ -17,25 +17,23 @@ final class ZipTests: XCTestCase {
         }
     }
 
-    private var tempDir: String!
-    private var server: VaultServer!
-    private var port: Int = 0
-    private var sessionToken: String = ""
+    private var tempDir: URL = URL(fileURLWithPath: NSTemporaryDirectory())
+    private var server: VaultServer?
+    private var port: UInt16 = 0
+    private var authCookie: String = ""
 
     override func setUp() {
         super.setUp()
-        tempDir = NSTemporaryDirectory() + "exvault_zip_test_" + UUID().uuidString
-        try? FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
+        tempDir = URL(fileURLWithPath: (NSTemporaryDirectory() as NSString).appendingPathComponent("zip_test_\(UUID().uuidString)"))
+        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true, attributes: nil)
     }
 
     override func tearDown() {
         if server != nil {
-            server.stop()
+            server?.stop()
             server = nil
         }
-        if let dir = tempDir {
-            try? FileManager.default.removeItem(atPath: dir)
-        }
+        try? FileManager.default.removeItem(at: tempDir)
         super.tearDown()
     }
 
@@ -141,7 +139,7 @@ final class ZipTests: XCTestCase {
     // MARK: - 3. Database zipEntries Generation & Deduplication
 
     func testZipEntriesGenerationAndDeduplication() throws {
-        let dbPath = tempDir + "/test_zip.db"
+        let dbPath = tempDir.appendingPathComponent("test_zip.db").path
         let db = try Database(path: dbPath)
         try Schema.migrate(db)
         let store = VaultStore(db: db)
@@ -151,7 +149,7 @@ final class ZipTests: XCTestCase {
         let subFolder = try store.createFolder(parentId: folder1.id, name: "Sub")
         _ = try store.createFile(parentId: subFolder.id, name: "nested.txt", size: 5, storedSize: 5, mime: "text/plain", codec: 0, crc32: 1234, blobId: "b1", mtime: nil)
 
-        // Create two files at root with the same name logic (or passing ids of duplicate names)
+        // Create two files with same name across different folders
         let f1 = try store.createFile(parentId: folder1.id, name: "item.txt", size: 10, storedSize: 10, mime: "text/plain", codec: 0, crc32: 2345, blobId: "b2", mtime: nil)
         let f2 = try store.createFile(parentId: nil, name: "item.txt", size: 20, storedSize: 20, mime: "text/plain", codec: 0, crc32: 3456, blobId: "b3", mtime: nil)
 
@@ -181,14 +179,12 @@ final class ZipTests: XCTestCase {
 
         // 1. Create a 2-level folder structure: "archive_test" / "nested"
         let f1Resp = try req(path: "/api/folders", method: "POST", jsonBody: ["name": "archive_test"])
-        guard let f1Json = try? JSONSerialization.jsonObject(with: f1Resp.body, options: []) as? [String: Any],
-              let f1Id = f1Json["id"] as? String else {
+        guard let f1Id = f1Resp.json?["id"] as? String else {
             return XCTFail("Failed to create root folder")
         }
 
         let f2Resp = try req(path: "/api/folders", method: "POST", jsonBody: ["name": "nested", "parentId": f1Id])
-        guard let f2Json = try? JSONSerialization.jsonObject(with: f2Resp.body, options: []) as? [String: Any],
-              let f2Id = f2Json["id"] as? String else {
+        guard let f2Id = f2Resp.json?["id"] as? String else {
             return XCTFail("Failed to create nested folder")
         }
 
@@ -228,10 +224,10 @@ final class ZipTests: XCTestCase {
         #if os(macOS)
         let unzipTool = "/usr/bin/unzip"
         if FileManager.default.isExecutableFile(atPath: unzipTool) {
-            let zipPath = tempDir + "/test_download.zip"
-            let extractDir = tempDir + "/extracted"
+            let zipPath = tempDir.appendingPathComponent("test_download.zip").path
+            let extractDir = tempDir.appendingPathComponent("extracted").path
             try zipResp.body.write(to: URL(fileURLWithPath: zipPath))
-            try FileManager.default.createDirectory(atPath: extractDir, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(atPath: extractDir, withIntermediateDirectories: true, attributes: nil)
 
             // Test integrity: unzip -t
             let testProcess = Process()
@@ -264,34 +260,35 @@ final class ZipTests: XCTestCase {
     // MARK: - Server & HTTP Helpers
 
     private func setupServer() throws {
+        let dataDir = tempDir.appendingPathComponent("Data")
+        let webRoot = tempDir.appendingPathComponent("Web")
+        try FileManager.default.createDirectory(at: dataDir, withIntermediateDirectories: true, attributes: nil)
+        try FileManager.default.createDirectory(at: webRoot, withIntermediateDirectories: true, attributes: nil)
+
         let config = VaultConfig(
-            dataDir: tempDir + "/data",
-            webRoot: tempDir + "/web",
+            dataDir: dataDir,
+            webRoot: webRoot,
             port: 0
         )
-        try FileManager.default.createDirectory(atPath: config.dataDir, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(atPath: config.webRoot, withIntermediateDirectories: true)
 
-        server = VaultServer(config: config)
-        try server.start()
-        port = server.port
+        let s = try VaultServer(config: config)
+        try s.start()
+        self.server = s
+        self.port = s.boundPort
         XCTAssertTrue(port > 0)
 
         // Login to obtain exv_sid
-        let user = server.currentCredentials.username
-        let pass = server.currentCredentials.password
         let authResp = try req(
-            path: "/api/auth/login",
+            path: "/api/login",
             method: "POST",
-            jsonBody: ["username": user, "password": pass]
+            jsonBody: ["username": s.credentials.username, "password": s.credentials.password]
         )
         XCTAssertEqual(authResp.status, 200)
-        let cookies = authResp.cookies
-        guard let sid = cookies["exv_sid"] else {
-            XCTFail("Missing exv_sid cookie on login")
+        guard let setCookie = authResp.headers["set-cookie"] else {
+            XCTFail("Missing Set-Cookie on login")
             return
         }
-        sessionToken = sid
+        self.authCookie = String(setCookie.split(separator: ";").first!)
     }
 
     private func uploadFile(parentId: String?, name: String, data: Data, compress: String) throws {
@@ -307,8 +304,7 @@ final class ZipTests: XCTestCase {
 
         let createResp = try req(path: "/api/upload", method: "POST", jsonBody: createPayload)
         XCTAssertEqual(createResp.status, 201)
-        guard let createJson = try? JSONSerialization.jsonObject(with: createResp.body, options: []) as? [String: Any],
-              let uploadId = createJson["uploadId"] as? String else {
+        guard let uploadId = createResp.json?["uploadId"] as? String else {
             XCTFail("Missing uploadId")
             return
         }
@@ -328,13 +324,12 @@ final class ZipTests: XCTestCase {
         for _ in 0..<50 {
             Thread.sleep(forTimeInterval: 0.05)
             let stResp = try req(path: "/api/upload/\(uploadId)")
-            if let stJson = try? JSONSerialization.jsonObject(with: stResp.body, options: []) as? [String: Any],
-               let state = stJson["state"] as? String {
+            if let state = stResp.json?["state"] as? String {
                 if state == "done" {
                     return
                 }
                 if state == "error" {
-                    XCTFail("Upload processing failed: \(stJson["error"] ?? "")")
+                    XCTFail("Upload processing failed: \(stResp.json?["error"] ?? "")")
                     return
                 }
             }
@@ -345,8 +340,8 @@ final class ZipTests: XCTestCase {
     private struct TestResponse {
         let status: Int
         let headers: [String: String]
-        let cookies: [String: String]
         let body: Data
+        let json: [String: Any]?
     }
 
     private func req(
@@ -364,8 +359,8 @@ final class ZipTests: XCTestCase {
             request.setValue(v, forHTTPHeaderField: k)
         }
 
-        if !sessionToken.isEmpty && customHeaders["Cookie"] == nil {
-            request.setValue("exv_sid=\(sessionToken)", forHTTPHeaderField: "Cookie")
+        if !authCookie.isEmpty && customHeaders["Cookie"] == nil {
+            request.setValue(authCookie, forHTTPHeaderField: "Cookie")
         }
 
         if let json = jsonBody {
@@ -378,7 +373,6 @@ final class ZipTests: XCTestCase {
         let sem = DispatchSemaphore(value: 0)
         var responseStatus = 0
         var responseHeaders: [String: String] = [:]
-        var responseCookies: [String: String] = [:]
         var responseBody = Data()
         var reqError: Error?
 
@@ -396,15 +390,6 @@ final class ZipTests: XCTestCase {
                 for (k, v) in http.allHeaderFields {
                     if let ks = k as? String, let vs = v as? String {
                         responseHeaders[ks.lowercased()] = vs
-                        if ks.lowercased() == "set-cookie" {
-                            let parts = vs.split(separator: ";")
-                            if let first = parts.first {
-                                let kv = first.split(separator: "=", maxSplits: 1)
-                                if kv.count == 2 {
-                                    responseCookies[String(kv[0]).trimmingCharacters(in: .whitespaces)] = String(kv[1]).trimmingCharacters(in: .whitespaces)
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -420,11 +405,13 @@ final class ZipTests: XCTestCase {
             throw err
         }
 
+        let json = try? JSONSerialization.jsonObject(with: responseBody, options: []) as? [String: Any]
+
         return TestResponse(
             status: responseStatus,
             headers: responseHeaders,
-            cookies: responseCookies,
-            body: responseBody
+            body: responseBody,
+            json: json
         )
     }
 }
