@@ -15,16 +15,13 @@ final class ViewController: UIViewController {
     private let statusLabel = UILabel()
     private let urlLabel = UILabel()
     private let userLabel = UILabel()
-    private let passHeaderLabel = UILabel()
-    private let passValueLabel = UILabel()
+    private let passLabel = UILabel()
     private let diskLabel = UILabel()
     private let sessionsLabel = UILabel()
     private let logHeaderLabel = UILabel()
     private let logContentLabel = UILabel()
 
-    private let buttonStack = UIStackView()
     private let dimButton = UIButton(type: .system)
-    private let copyPassButton = UIButton(type: .system)
 
     private var timer: Timer?
     private let startTime = Date()
@@ -102,15 +99,22 @@ final class ViewController: UIViewController {
         configureMonospaceLabel(statusLabel)
         configureMonospaceLabel(urlLabel)
         configureMonospaceLabel(userLabel)
-        configureMonospaceLabel(passHeaderLabel)
-        passHeaderLabel.text = "Pass   :"
 
-        passValueLabel.font = UIFont(name: "Menlo-Bold", size: 22) ?? UIFont.monospacedDigitSystemFont(ofSize: 22, weight: .bold)
-        passValueLabel.textColor = .white
-        passValueLabel.numberOfLines = 1
+        passLabel.font = UIFont(name: "Menlo-Bold", size: 18) ?? UIFont.monospacedDigitSystemFont(ofSize: 18, weight: .bold)
+        passLabel.textColor = .white
+        passLabel.numberOfLines = 0
+        passLabel.lineBreakMode = .byCharWrapping
 
         configureMonospaceLabel(diskLabel)
         configureMonospaceLabel(sessionsLabel)
+
+        dimButton.setTitle("Dim screen", for: .normal)
+        dimButton.titleLabel?.font = font
+        dimButton.setTitleColor(.black, for: .normal)
+        dimButton.backgroundColor = UIColor(white: 0.9, alpha: 1.0)
+        dimButton.layer.cornerRadius = 6
+        dimButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        dimButton.addTarget(self, action: #selector(handleDimPressed), for: .touchUpInside)
 
         configureMonospaceLabel(logHeaderLabel)
         logHeaderLabel.text = "\n--- log (latest 10) ---"
@@ -118,39 +122,14 @@ final class ViewController: UIViewController {
         configureMonospaceLabel(logContentLabel)
         logContentLabel.textColor = UIColor(white: 0.8, alpha: 1.0)
 
-        // Buttons
-        buttonStack.axis = .horizontal
-        buttonStack.spacing = 12
-        buttonStack.distribution = .fillEqually
-
-        dimButton.setTitle("Dim screen", for: .normal)
-        dimButton.titleLabel?.font = font
-        dimButton.setTitleColor(.black, for: .normal)
-        dimButton.backgroundColor = UIColor(white: 0.9, alpha: 1.0)
-        dimButton.layer.cornerRadius = 6
-        dimButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        dimButton.addTarget(self, action: #selector(handleDimPressed), for: .touchUpInside)
-
-        copyPassButton.setTitle("Copy pass", for: .normal)
-        copyPassButton.titleLabel?.font = font
-        copyPassButton.setTitleColor(.black, for: .normal)
-        copyPassButton.backgroundColor = UIColor(white: 0.9, alpha: 1.0)
-        copyPassButton.layer.cornerRadius = 6
-        copyPassButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        copyPassButton.addTarget(self, action: #selector(handleCopyPassPressed), for: .touchUpInside)
-
-        buttonStack.addArrangedSubview(dimButton)
-        buttonStack.addArrangedSubview(copyPassButton)
-
         stackView.addArrangedSubview(titleLabel)
         stackView.addArrangedSubview(statusLabel)
         stackView.addArrangedSubview(urlLabel)
         stackView.addArrangedSubview(userLabel)
-        stackView.addArrangedSubview(passHeaderLabel)
-        stackView.addArrangedSubview(passValueLabel)
+        stackView.addArrangedSubview(passLabel)
         stackView.addArrangedSubview(diskLabel)
         stackView.addArrangedSubview(sessionsLabel)
-        stackView.addArrangedSubview(buttonStack)
+        stackView.addArrangedSubview(dimButton)
         stackView.addArrangedSubview(logHeaderLabel)
         stackView.addArrangedSubview(logContentLabel)
     }
@@ -189,10 +168,10 @@ final class ViewController: UIViewController {
         // User and Pass
         if let creds = server?.credentials {
             userLabel.text = "User   : \(creds.username)"
-            passValueLabel.text = creds.password
+            passLabel.text = "Pass   : \(creds.password)"
         } else {
             userLabel.text = "User   : -"
-            passValueLabel.text = "-"
+            passLabel.text = "Pass   : -"
         }
 
         // Disk space
@@ -213,16 +192,6 @@ final class ViewController: UIViewController {
 
     @objc private func handleDimPressed() {
         keepAlive?.setDim(true)
-    }
-
-    @objc private func handleCopyPassPressed() {
-        if let pass = serverProvider()?.credentials.password {
-            UIPasteboard.general.string = pass
-            copyPassButton.setTitle("Copied!", for: .normal)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                self?.copyPassButton.setTitle("Copy pass", for: .normal)
-            }
-        }
     }
 
     private func formatBytes(_ bytes: Int64) -> String {

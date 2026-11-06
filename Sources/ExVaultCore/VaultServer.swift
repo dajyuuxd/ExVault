@@ -147,6 +147,7 @@ public final class VaultServer {
         let actualPort = try server.start(port: config.port)
         self.boundPort = actualPort
         Log.info("ExVault server started on port \(actualPort)")
+        Log.info("Credentials -> user: \(credentials.username) | pass: \(credentials.password)")
     }
 
     public func stop() {

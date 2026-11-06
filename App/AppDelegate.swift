@@ -44,6 +44,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 let srv = try VaultServer(config: config)
                 try srv.start()
                 self?.server = srv
+                Log.info("Login at http://\(Net.localIPv4Addresses().first ?? "localhost"):\(srv.boundPort) with user: \(srv.credentials.username) pass: \(srv.credentials.password)")
             } catch {
                 Log.error("Server start failure: \(error)")
                 DispatchQueue.main.async {
