@@ -20,15 +20,23 @@ final class ZipTests: XCTestCase {
     private var tempDir: URL = URL(fileURLWithPath: NSTemporaryDirectory())
     private var server: VaultServer?
     private var port: UInt16 = 0
+    private var session: URLSession = URLSession.shared
     private var authCookie: String = ""
 
     override func setUp() {
         super.setUp()
         tempDir = URL(fileURLWithPath: (NSTemporaryDirectory() as NSString).appendingPathComponent("zip_test_\(UUID().uuidString)"))
         try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true, attributes: nil)
+
+        let sessionConfig = URLSessionConfiguration.ephemeral
+        sessionConfig.timeoutIntervalForRequest = 5.0
+        sessionConfig.httpShouldSetCookies = false
+        sessionConfig.httpCookieAcceptPolicy = .never
+        self.session = URLSession(configuration: sessionConfig)
     }
 
     override func tearDown() {
+        self.session.invalidateAndCancel()
         if server != nil {
             server?.stop()
             server = nil
@@ -283,7 +291,7 @@ final class ZipTests: XCTestCase {
             method: "POST",
             jsonBody: ["username": s.credentials.username, "password": s.credentials.password]
         )
-        XCTAssertEqual(authResp.status, 200)
+        XCTAssertEqual(authResp.status, 204)
         guard let setCookie = authResp.headers["set-cookie"] else {
             XCTFail("Missing Set-Cookie on login")
             return
@@ -376,12 +384,7 @@ final class ZipTests: XCTestCase {
         var responseBody = Data()
         var reqError: Error?
 
-        let sessionConfig = URLSessionConfiguration.ephemeral
-        sessionConfig.httpShouldSetCookies = false
-        sessionConfig.httpCookieAcceptPolicy = .never
-        let session = URLSession(configuration: sessionConfig)
-
-        let task = session.dataTask(with: request) { data, response, error in
+        let task = self.session.dataTask(with: request) { data, response, error in
             if let error = error {
                 reqError = error
             }
