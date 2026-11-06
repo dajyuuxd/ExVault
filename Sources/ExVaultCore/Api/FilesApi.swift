@@ -35,7 +35,7 @@ public enum FilesApi: ApiModule {
                 )
             }
 
-            Log.info("Download: '\(node.name)' (\(info.size) B)")
+            Log.info("Download: '\(info.name)' (\(info.size) B)")
 
             // 2. Codec: raw (0) vs zlib (1)
             if info.codec == 0 {

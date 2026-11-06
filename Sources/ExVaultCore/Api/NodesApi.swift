@@ -214,15 +214,6 @@ public enum NodesApi: ApiModule {
             Log.info("Emptied trash: \(count) item(s) purged")
             return HttpResponse.json(["count": count])
         }
-            let (count, deletedBlobs, deletedThumbs) = try ctx.store.emptyTrash()
-            for blobId in deletedBlobs {
-                ctx.blobs.delete(blobId: blobId)
-            }
-            for nodeId in deletedThumbs {
-                ctx.blobs.deleteThumb(nodeId: nodeId)
-            }
-            return HttpResponse.json(["count": count])
-        }
 
         // GET /api/search
         r.add("GET", "/api/search", auth: true) { req in
