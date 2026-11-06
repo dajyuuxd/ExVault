@@ -75,12 +75,16 @@ final class UploadManagerTests: XCTestCase {
 
         for i in 0..<chunkCount {
             let offset = Int64(i * chunkSize)
+            var chunkReadOffset = 0
             let received = try manager.appendChunk(id: upload.id, offset: offset, length: chunkSize) { buf, maxCount in
-                let toCopy = min(maxCount, chunkSize)
+                let remaining = chunkSize - chunkReadOffset
+                if remaining <= 0 { return 0 }
+                let toCopy = min(maxCount, remaining)
                 chunkData.withUnsafeBytes { raw in
                     guard let base = raw.baseAddress else { return }
-                    buf.copyMemory(from: base, byteCount: toCopy)
+                    buf.copyMemory(from: base.advanced(by: chunkReadOffset), byteCount: toCopy)
                 }
+                chunkReadOffset += toCopy
                 return toCopy
             }
             XCTAssertEqual(received, offset + Int64(chunkSize))
@@ -145,12 +149,17 @@ final class UploadManagerTests: XCTestCase {
             compress: true
         )
 
+        var dataReadOffset = 0
         _ = try manager.appendChunk(id: upload.id, offset: 0, length: Int(size)) { buf, maxCount in
+            let remaining = Int(size) - dataReadOffset
+            if remaining <= 0 { return 0 }
+            let toCopy = min(maxCount, remaining)
             data.withUnsafeBytes { raw in
                 guard let base = raw.baseAddress else { return }
-                buf.copyMemory(from: base, byteCount: Int(size))
+                buf.copyMemory(from: base.advanced(by: dataReadOffset), byteCount: toCopy)
             }
-            return Int(size)
+            dataReadOffset += toCopy
+            return toCopy
         }
 
         try manager.finish(id: upload.id)
@@ -179,12 +188,17 @@ final class UploadManagerTests: XCTestCase {
         manager.onProcessed = { _ in exp1.fulfill() }
 
         let up1 = try manager.create(parentId: nil, name: "random.bin", size: size, mime: "", lastModified: nil, compress: true)
-        _ = try manager.appendChunk(id: up1.id, offset: 0, length: Int(size)) { buf, _ in
+        var randReadOffset = 0
+        _ = try manager.appendChunk(id: up1.id, offset: 0, length: Int(size)) { buf, maxCount in
+            let remaining = Int(size) - randReadOffset
+            if remaining <= 0 { return 0 }
+            let toCopy = min(maxCount, remaining)
             randData.withUnsafeBytes { raw in
                 guard let base = raw.baseAddress else { return }
-                buf.copyMemory(from: base, byteCount: Int(size))
+                buf.copyMemory(from: base.advanced(by: randReadOffset), byteCount: toCopy)
             }
-            return Int(size)
+            randReadOffset += toCopy
+            return toCopy
         }
         try manager.finish(id: up1.id)
         wait(for: [exp1], timeout: 5.0)
@@ -199,12 +213,17 @@ final class UploadManagerTests: XCTestCase {
         manager.onProcessed = { _ in exp2.fulfill() }
 
         let up2 = try manager.create(parentId: nil, name: "zeros.bin", size: size, mime: "", lastModified: nil, compress: true)
-        _ = try manager.appendChunk(id: up2.id, offset: 0, length: Int(size)) { buf, _ in
+        var zeroReadOffset = 0
+        _ = try manager.appendChunk(id: up2.id, offset: 0, length: Int(size)) { buf, maxCount in
+            let remaining = Int(size) - zeroReadOffset
+            if remaining <= 0 { return 0 }
+            let toCopy = min(maxCount, remaining)
             zeroData.withUnsafeBytes { raw in
                 guard let base = raw.baseAddress else { return }
-                buf.copyMemory(from: base, byteCount: Int(size))
+                buf.copyMemory(from: base.advanced(by: zeroReadOffset), byteCount: toCopy)
             }
-            return Int(size)
+            zeroReadOffset += toCopy
+            return toCopy
         }
         try manager.finish(id: up2.id)
         wait(for: [exp2], timeout: 5.0)
