@@ -157,7 +157,7 @@ name: build
 on: [push, pull_request, workflow_dispatch]
 jobs:
   core:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - run: swift --version && xcodebuild -version
@@ -168,7 +168,7 @@ jobs:
       - run: bash scripts/integration.sh        # có từ T13
         if: hashFiles('scripts/integration.sh') != ''
   ios:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - run: brew install xcodegen

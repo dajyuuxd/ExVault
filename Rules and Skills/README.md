@@ -22,17 +22,7 @@ ExVault là app iOS (file `.ipa`) biến iPhone cũ (mục tiêu đầu tiên: *
 | Giữ máy sống | `idleTimerDisabled` + phát âm thanh im lặng (UIBackgroundModes=audio) + chế độ làm tối màn hình |
 | Log | Chỉ hiện trên màn hình/console, **không ghi ra đĩa** |
 
-## 2. Việc của bạn (người không code)
-
-1. Tạo tài khoản GitHub, cài **Git for Windows**, tạo repo trống tên `ExVault` (nên để *public* để GitHub Actions macOS miễn phí không giới hạn phút; repo private bị tính phút và macOS tính phút gấp 10).
-2. Giải nén bộ tài liệu này vào thư mục repo, `git add . && git commit && git push`.
-3. Mở thư mục repo trong **Antigravity**, dán nội dung `AGENT_PROMPT.md` làm chỉ dẫn gốc, rồi giao **một task một lần**: *"Làm task `tasks/T00-scaffold-ci.md`"*.
-4. Sau mỗi task agent push code → vào tab **Actions** trên GitHub xem xanh/đỏ. Nếu đỏ, copy log lỗi đưa lại cho agent. Nếu agent dùng được `gh` CLI thì nó tự xem log.
-5. Chỉ chuyển sang task kế khi task trước **xanh** và agent đã tick đủ tiêu chí nghiệm thu trong `PROGRESS.md`.
-6. Sau T18 (CI xuất file `.ipa`): tải artifact `ExVault-unsigned.ipa` ở tab Actions, cài lên 5s đã jailbreak (cần AppSync Unified hoặc cài bằng Filza/ipainstaller; bước này bạn tự xử lý).
-7. Mở app trên iPhone → đọc user/mật khẩu → vào địa chỉ hiển thị bằng trình duyệt máy tính.
-
-## 3. Danh mục tài liệu
+## 2. Danh mục tài liệu
 
 | File | Nội dung |
 |---|---|
@@ -47,7 +37,7 @@ ExVault là app iOS (file `.ipa`) biến iPhone cũ (mục tiêu đầu tiên: *
 | `docs/07-ios-app-ci.md` | App iOS, KeepAlive, Info.plist, XcodeGen, CI, đóng gói IPA |
 | `tasks/T00…T19` | 20 task nhỏ, làm tuần tự, có tiêu chí nghiệm thu |
 
-## 4. Rủi ro cần biết trước
+## 3. Rủi ro cần biết trước
 
 1. **iOS 12.0 + Xcode trên CI**: Xcode 15.x còn hỗ trợ deployment target iOS 12.0. Nếu runner đổi phiên bản Xcode làm build lỗi, chọn Xcode khác bằng `xcode-select` (xem `docs/07`).
 2. **IPA không ký**: chỉ chạy được trên máy jailbreak có công cụ cho phép cài/ chạy app không ký (AppSync Unified...). Ngoài phạm vi tài liệu này.
