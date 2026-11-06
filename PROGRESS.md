@@ -5,7 +5,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | Task | Tên | Trạng thái | CI | Ghi chú |
 |---|---|---|---|---|
 | T00 | Scaffold + CI | ☑ | Xanh | Hoàn thành scaffold, CI core + ios xanh, sinh artifact IPA |
-| T01 | Util (ID, CRC32, tên, MIME, Log) | ☐ | | |
+| T01 | Util (ID, CRC32, tên, MIME, Log) | ☑ | Xanh | 19 tests, toàn bộ util modules hoàn thành |
 | T02 | SQLite wrapper + schema | ☐ | | |
 | T03 | VaultStore: nodes, thùng rác | ☐ | | |
 | T04 | VaultStore: tags, search, stats | ☐ | | |
