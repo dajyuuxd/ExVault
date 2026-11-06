@@ -552,6 +552,110 @@ public final class VaultStore {
         }
     }
 
+    public func zipEntries(forIds ids: [String]) throws -> [ZipEntry] {
+        return try db.sync {
+            let uniqueIds = Array(Set(ids.filter { !$0.isEmpty }))
+            guard !uniqueIds.isEmpty else { return [] }
+
+            let placeholders = [String](repeating: "?", count: uniqueIds.count).joined(separator: ",")
+            let binds = uniqueIds.map { SQLValue.text($0) }
+            let sql = """
+            SELECT id, parent_id, kind, name, name_lower, size, stored_size, mime, codec, crc32, has_thumb, created_at, modified_at, trashed_at
+            FROM nodes
+            WHERE id IN (\(placeholders)) AND trashed_at IS NULL
+            ORDER BY name_lower ASC, id ASC;
+            """
+
+            let rootRows = try db.query(sql, binds) { row in
+                NodeZipRow(
+                    id: row.text(0),
+                    parentId: row.optText(1),
+                    kind: Int(row.int(2)),
+                    name: row.text(3),
+                    nameLower: row.text(4),
+                    size: row.int(5),
+                    storedSize: row.int(6),
+                    mime: row.text(7),
+                    codec: Int(row.int(8)),
+                    crc32: UInt32(row.int(9) & 0xFFFFFFFF),
+                    hasThumb: row.int(10) != 0,
+                    createdAt: row.int(11),
+                    modifiedAt: row.int(12),
+                    trashedAt: row.optInt(13)
+                )
+            }
+
+            var entries: [ZipEntry] = []
+            var usedNames: Set<String> = []
+            var visitedFolderIds: Set<String> = []
+
+            for root in rootRows {
+                let uniqueName = NameRules.uniqueName(root.name) { usedNames.contains($0.lowercased()) }
+                usedNames.insert(uniqueName.lowercased())
+
+                if root.kind == 0 {
+                    let folderPath = uniqueName + "/"
+                    entries.append(ZipEntry(path: folderPath, isDir: true, size: 0, crc32: 0, node: root.toNode))
+                    try collectZipFolderChildren(folderId: root.id, parentPath: folderPath, visitedFolders: &visitedFolderIds, into: &entries)
+                } else {
+                    entries.append(ZipEntry(path: uniqueName, isDir: false, size: root.size, crc32: root.crc32, node: root.toNode))
+                }
+            }
+
+            return entries
+        }
+    }
+
+    private func collectZipFolderChildren(
+        folderId: String,
+        parentPath: String,
+        visitedFolders: inout Set<String>,
+        into entries: inout [ZipEntry]
+    ) throws {
+        guard !visitedFolders.contains(folderId) else { return }
+        visitedFolders.insert(folderId)
+
+        let sql = """
+        SELECT id, parent_id, kind, name, name_lower, size, stored_size, mime, codec, crc32, has_thumb, created_at, modified_at, trashed_at
+        FROM nodes
+        WHERE parent_id = ? AND trashed_at IS NULL
+        ORDER BY kind ASC, name_lower ASC, id ASC;
+        """
+        let childRows = try db.query(sql, [.text(folderId)]) { row in
+            NodeZipRow(
+                id: row.text(0),
+                parentId: row.optText(1),
+                kind: Int(row.int(2)),
+                name: row.text(3),
+                nameLower: row.text(4),
+                size: row.int(5),
+                storedSize: row.int(6),
+                mime: row.text(7),
+                codec: Int(row.int(8)),
+                crc32: UInt32(row.int(9) & 0xFFFFFFFF),
+                hasThumb: row.int(10) != 0,
+                createdAt: row.int(11),
+                modifiedAt: row.int(12),
+                trashedAt: row.optInt(13)
+            )
+        }
+
+        var usedNames: Set<String> = []
+        for child in childRows {
+            let uniqueName = NameRules.uniqueName(child.name) { usedNames.contains($0.lowercased()) }
+            usedNames.insert(uniqueName.lowercased())
+
+            if child.kind == 0 {
+                let childPath = parentPath + uniqueName + "/"
+                entries.append(ZipEntry(path: childPath, isDir: true, size: 0, crc32: 0, node: child.toNode))
+                try collectZipFolderChildren(folderId: child.id, parentPath: childPath, visitedFolders: &visitedFolders, into: &entries)
+            } else {
+                let childPath = parentPath + uniqueName
+                entries.append(ZipEntry(path: childPath, isDir: false, size: child.size, crc32: child.crc32, node: child.toNode))
+            }
+        }
+    }
+
     // MARK: - Private Helpers
 
     private func isDescendant(candidateDescendantId: String, ancestorId: String) throws -> Bool {
@@ -624,4 +728,39 @@ private func mapNode(_ row: Row, tagIds: [Int64]) -> Node {
         modifiedAt: row.int(10),
         trashedAt: row.optInt(11)
     )
+}
+
+private struct NodeZipRow {
+    let id: String
+    let parentId: String?
+    let kind: Int
+    let name: String
+    let nameLower: String
+    let size: Int64
+    let storedSize: Int64
+    let mime: String
+    let codec: Int
+    let crc32: UInt32
+    let hasThumb: Bool
+    let createdAt: Int64
+    let modifiedAt: Int64
+    let trashedAt: Int64?
+
+    var toNode: Node {
+        return Node(
+            id: id,
+            parentId: parentId,
+            kind: kind == 0 ? "folder" : "file",
+            name: name,
+            size: size,
+            storedSize: storedSize,
+            mime: mime,
+            codec: codec == 1 ? "zlib" : "raw",
+            hasThumb: hasThumb,
+            tagIds: [],
+            createdAt: createdAt,
+            modifiedAt: modifiedAt,
+            trashedAt: trashedAt
+        )
+    }
 }

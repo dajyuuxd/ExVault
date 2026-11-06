@@ -129,6 +129,7 @@ public final class VaultServer {
         StatsApi.register(r, apiCtx)
         UploadApi.register(r, apiCtx)
         FilesApi.register(r, apiCtx)
+        ZipApi.register(r, apiCtx)
     }
 
     public func start() throws {

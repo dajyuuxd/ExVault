@@ -196,7 +196,7 @@ public enum FilesApi: ApiModule {
         }
     }
 
-    private static func formatContentDisposition(name: String, isAttachment: Bool) -> String {
+    public static func formatContentDisposition(name: String, isAttachment: Bool) -> String {
         let disposition = isAttachment ? "attachment" : "inline"
 
         var ascii = ""
