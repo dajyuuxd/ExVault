@@ -15,7 +15,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T08 | Router, Range, static files | ☑ | Xanh | URL routing with :id/wildcards, Range parser, StaticFiles with realpath traversal protection and ETag |
 | T09 | Auth | ☑ | Xanh | Credentials generator, SessionStore with TTL & sliding window, RateLimiter with lockout & bounded IP table |
 | T10 | API: nodes, folders, tags, trash, search, stats | ☑ | Xanh | ApiContext, AuthApi, NodesApi, TagsApi, StatsApi, VaultServer integration tested over HTTP |
-| T11 | API: upload, content, thumb | ☐ | | |
+| T11 | API: upload, content, thumb | ☑ | Xanh | Upload initiation/chunks/finish/cancel, content download (raw Range + zlib streaming), thumbnail PUT/GET |
 | T12 | ZipWriter + endpoint | ☐ | | |
 | T13 | CLI macOS + integration script | ☐ | | |
 | T14 | Web: shell, login, i18n, theme, danh sách | ☐ | | |
