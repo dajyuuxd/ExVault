@@ -77,12 +77,34 @@ window.EX = window.EX || {};
     } else if (e.key === 'F2') {
       if (EX.state.selection.size === 1 && EX.state.mode === 'files') {
         e.preventDefault();
-        EX.promptRenameSelected();
+        const id = Array.from(EX.state.selection)[0];
+        const item = (EX.state.items || []).find((i) => i.id === id);
+        if (item && typeof EX.promptRename === 'function') {
+          EX.promptRename(item);
+        } else {
+          EX.promptRenameSelected();
+        }
+      }
+    } else if (e.key === 'Enter') {
+      if (EX.state.selection.size === 1) {
+        e.preventDefault();
+        const id = Array.from(EX.state.selection)[0];
+        const item = (EX.state.items || []).find((i) => i.id === id);
+        if (item) {
+          if (item.kind === 'folder') {
+            EX.navigate(item.id);
+          } else if (EX.viewer && typeof EX.viewer.open === 'function') {
+            EX.viewer.open(item.id, EX.state.items);
+          } else {
+            window.open(EX.api.contentUrl(item.id, true), '_blank');
+          }
+        }
       }
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       EX.selectAll();
     } else if (e.key === 'Escape') {
+      if (typeof EX.closeContextMenu === 'function') EX.closeContextMenu();
       EX.clearSelection();
     }
   }

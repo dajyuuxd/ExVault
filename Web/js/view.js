@@ -102,13 +102,23 @@ window.EX = window.EX || {};
       h('span', { class: 'brand-title' }, EX.t('app.title'))
     );
 
+    let searchDebounceTimer = null;
     const searchInput = h('input', {
       type: 'search',
       class: 'search-input',
       placeholder: EX.t('top.search_placeholder'),
       value: EX.state.query || '',
+      oninput: (e) => {
+        const q = e.target.value.trim();
+        if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+          if (q) window.location.hash = `#/search/${encodeURIComponent(q)}`;
+          else if (EX.state.mode === 'search') EX.navigate(EX.state.parent);
+        }, 300);
+      },
       onkeydown: (e) => {
         if (e.key === 'Enter') {
+          if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
           const q = e.target.value.trim();
           if (q) window.location.hash = `#/search/${encodeURIComponent(q)}`;
           else EX.navigate(EX.state.parent);
@@ -391,6 +401,215 @@ window.EX = window.EX || {};
     return EX.renderList(items);
   };
 
+  // Thumbnail loading manager: max 4 parallel requests to prevent connection exhaustion
+  const thumbQueue = [];
+  let activeThumbs = 0;
+  const MAX_THUMB_PARALLEL = 4;
+
+  function pumpThumbQueue() {
+    while (activeThumbs < MAX_THUMB_PARALLEL && thumbQueue.length > 0) {
+      const { img, url } = thumbQueue.shift();
+      activeThumbs++;
+      const temp = new Image();
+      temp.onload = () => {
+        img.src = url;
+        activeThumbs--;
+        pumpThumbQueue();
+      };
+      temp.onerror = () => {
+        activeThumbs--;
+        pumpThumbQueue();
+      };
+      temp.src = url;
+    }
+  }
+
+  const thumbObserver = (typeof window !== 'undefined' && 'IntersectionObserver' in window)
+    ? new IntersectionObserver((entries, observer) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            observer.unobserve(img);
+            const url = img.dataset.src;
+            if (url) {
+              thumbQueue.push({ img, url });
+              pumpThumbQueue();
+            }
+          }
+        }
+      }, { rootMargin: '120px' })
+    : null;
+
+  function bindLazyThumb(img, url) {
+    img.dataset.src = url;
+    if (thumbObserver) {
+      thumbObserver.observe(img);
+    } else {
+      thumbQueue.push({ img, url });
+      pumpThumbQueue();
+    }
+  }
+
+  // Cluster / batch rendering for smooth scrolling with thousands of items
+  function renderBatchedItems(items, container, renderFn) {
+    const BATCH_SIZE = 200;
+    let index = 0;
+
+    function renderNextBatch() {
+      const fragment = document.createDocumentFragment();
+      const end = Math.min(index + BATCH_SIZE, items.length);
+      for (; index < end; index++) {
+        fragment.appendChild(renderFn(items[index]));
+      }
+      container.appendChild(fragment);
+
+      if (index < items.length) {
+        requestAnimationFrame(renderNextBatch);
+      }
+    }
+
+    renderNextBatch();
+  }
+
+  // Touch long press detector (500ms) for mobile context menu
+  function attachTouchLongPress(el, onLongPress) {
+    let touchTimer = null;
+    let startX = 0;
+    let startY = 0;
+
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+
+      touchTimer = setTimeout(() => {
+        touchTimer = null;
+        onLongPress(startX, startY);
+      }, 500);
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      if (touchTimer && e.touches.length === 1) {
+        const t = e.touches[0];
+        if (Math.hypot(t.clientX - startX, t.clientY - startY) > 10) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchend', () => {
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        touchTimer = null;
+      }
+    });
+
+    el.addEventListener('touchcancel', () => {
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        touchTimer = null;
+      }
+    });
+  }
+
+  // Context Menu
+  let activeContextMenu = null;
+
+  EX.closeContextMenu = function () {
+    if (activeContextMenu && activeContextMenu.parentNode) {
+      activeContextMenu.parentNode.removeChild(activeContextMenu);
+      activeContextMenu = null;
+    }
+  };
+
+  EX.openContextMenu = function (x, y, node) {
+    EX.closeContextMenu();
+    if (!node) return;
+
+    if (!EX.state.selection.has(node.id)) {
+      EX.setState({ selection: new Set([node.id]) });
+    }
+
+    const isTrash = EX.state.mode === 'trash';
+    const isSearch = EX.state.mode === 'search';
+    const isFolder = node.kind === 'folder';
+    const selCount = EX.state.selection.size;
+
+    const menu = h('div', { class: 'context-menu' });
+
+    function addItem(label, icon, onClick, danger = false) {
+      const itemEl = h('div', {
+        class: `context-menu-item ${danger ? 'danger' : ''}`,
+        onclick: (e) => {
+          e.stopPropagation();
+          EX.closeContextMenu();
+          onClick();
+        }
+      }, h('span', {}, icon), h('span', {}, label));
+      menu.appendChild(itemEl);
+    }
+
+    function addDivider() {
+      menu.appendChild(h('div', { class: 'context-menu-divider' }));
+    }
+
+    if (isTrash) {
+      addItem(EX.t('action.restore'), '↺', () => EX.bulkRestore());
+      addItem(EX.t('action.purge'), '🗑', () => EX.bulkPurge(), true);
+    } else {
+      if (selCount === 1) {
+        addItem(EX.t('action.open'), isFolder ? '📁' : '👁', () => {
+          if (isFolder) EX.navigate(node.id);
+          else openItem(node);
+        });
+
+        if (isSearch && node.parentId) {
+          addItem(EX.t('action.open_folder'), '📂', () => {
+            EX.navigate(node.parentId);
+          });
+        }
+      }
+
+      addItem(EX.t('action.download'), '⬇', () => EX.bulkDownload());
+
+      if (selCount === 1) {
+        addItem(EX.t('action.rename'), '✎', () => EX.promptRename(node));
+      }
+
+      addDivider();
+      addItem(EX.t('action.move'), '↗', () => EX.openMoveDialog(Array.from(EX.state.selection)));
+      addItem(EX.t('action.tag'), '🏷', () => EX.openTagDialog(Array.from(EX.state.selection)));
+      addDivider();
+      addItem(EX.t('action.delete'), '🗑', () => EX.bulkTrash(), true);
+    }
+
+    document.body.appendChild(menu);
+    const rect = menu.getBoundingClientRect();
+    let posX = x;
+    let posY = y;
+
+    if (posX + rect.width > window.innerWidth) {
+      posX = Math.max(10, window.innerWidth - rect.width - 10);
+    }
+    if (posY + rect.height > window.innerHeight) {
+      posY = Math.max(10, window.innerHeight - rect.height - 10);
+    }
+
+    menu.style.left = posX + 'px';
+    menu.style.top = posY + 'px';
+
+    activeContextMenu = menu;
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('click', () => EX.closeContextMenu());
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') EX.closeContextMenu();
+    });
+  }
+
   EX.renderList = function (items) {
     const allSelected = items.length > 0 && items.every((item) => EX.state.selection.has(item.id));
 
@@ -412,9 +631,7 @@ window.EX = window.EX || {};
     );
 
     const listContainer = h('div', { class: 'list-body' });
-    for (const item of items) {
-      listContainer.appendChild(EX.renderListItem(item));
-    }
+    renderBatchedItems(items, listContainer, EX.renderListItem);
 
     return h('div', { class: 'list-view' }, header, listContainer);
   };
@@ -440,10 +657,21 @@ window.EX = window.EX || {};
       else if (EX.isText(item)) icon = '📝';
     }
 
+    const nameText = h('span', { class: 'item-name-text' }, item.name);
     const nameEl = h('div', { class: 'col-name' },
       h('span', { class: 'item-icon' }, icon),
-      h('span', { class: 'item-name-text' }, item.name)
+      nameText
     );
+
+    if ((EX.state.mode === 'search' || EX.state.mode === 'tag') && item.pathText) {
+      nameEl.appendChild(h('div', {
+        class: 'item-path-sub',
+        onclick: (e) => {
+          e.stopPropagation();
+          if (item.parentId) EX.navigate(item.parentId);
+        }
+      }, '📂 ' + item.pathText));
+    }
 
     // Tags column
     const tagsEl = h('div', { class: 'col-tags' });
@@ -494,6 +722,52 @@ window.EX = window.EX || {};
       dateEl
     );
 
+    row.dataset.nodeId = item.id;
+    row.draggable = true;
+
+    row.ondragstart = (e) => {
+      if (!EX.state.selection.has(item.id)) {
+        EX.setState({ selection: new Set([item.id]) });
+      }
+      const ids = Array.from(EX.state.selection);
+      e.dataTransfer.setData('application/json', JSON.stringify(ids));
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    if (isFolder) {
+      row.ondragover = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        row.classList.add('drag-over');
+      };
+      row.ondragleave = () => {
+        row.classList.remove('drag-over');
+      };
+      row.ondrop = async (e) => {
+        e.preventDefault();
+        row.classList.remove('drag-over');
+        try {
+          const raw = e.dataTransfer.getData('application/json');
+          if (raw) {
+            const ids = JSON.parse(raw);
+            if (Array.isArray(ids) && !ids.includes(item.id)) {
+              await EX.api.move(ids, item.id);
+              EX.reload();
+            }
+          }
+        } catch (_) {}
+      };
+    }
+
+    row.oncontextmenu = (e) => {
+      e.preventDefault();
+      EX.openContextMenu(e.clientX, e.clientY, item);
+    };
+
+    attachTouchLongPress(row, (x, y) => {
+      EX.openContextMenu(x, y, item);
+    });
+
     return row;
   };
 
@@ -502,59 +776,117 @@ window.EX = window.EX || {};
       class: `grid-view grid-size-${EX.state.gridSize || 'M'} grid-fit-${EX.state.gridFit || 'contain'}`
     });
 
-    for (const item of items) {
-      const isSelected = EX.state.selection.has(item.id);
-      const isFolder = item.kind === 'folder';
+    renderBatchedItems(items, grid, EX.renderGridCard);
+    return grid;
+  };
 
-      const checkbox = h('input', {
-        type: 'checkbox',
-        class: 'grid-check',
-        checked: isSelected,
-        onclick: (e) => {
-          e.stopPropagation();
-          EX.toggleSelect(item.id, e);
-        }
-      });
+  EX.renderGridCard = function (item) {
+    const isSelected = EX.state.selection.has(item.id);
+    const isFolder = item.kind === 'folder';
 
-      let preview = null;
-      if (!isFolder && item.hasThumb) {
-        preview = h('img', {
-          src: EX.api.thumbUrl(item.id),
-          loading: 'lazy',
-          decoding: 'async',
-          class: 'grid-thumb',
-          alt: item.name
-        });
-      } else {
-        let icon = isFolder ? '📁' : '📄';
-        if (!isFolder) {
-          if (EX.isImage(item)) icon = '🖼';
-          else if (EX.isVideo(item)) icon = '🎞';
-          else if (EX.isPdf(item)) icon = '📕';
-        }
-        preview = h('span', { class: 'grid-icon-placeholder' }, icon);
+    const checkbox = h('input', {
+      type: 'checkbox',
+      class: 'grid-check',
+      checked: isSelected,
+      onclick: (e) => {
+        e.stopPropagation();
+        EX.toggleSelect(item.id, e);
       }
+    });
 
-      const card = h('div', {
-        class: `grid-card ${isSelected ? 'selected' : ''}`,
-        onclick: (e) => {
-          EX.toggleSelect(item.id, e);
-        },
-        ondblclick: (e) => {
-          e.stopPropagation();
-          if (isFolder) EX.navigate(item.id);
-          else openItem(item);
-        }
-      },
-        checkbox,
-        h('div', { class: 'grid-thumb-container' }, preview),
-        h('div', { class: 'grid-name', title: item.name }, item.name)
-      );
-
-      grid.appendChild(card);
+    let preview = null;
+    if (!isFolder && item.hasThumb) {
+      preview = h('img', {
+        class: 'grid-thumb',
+        alt: item.name
+      });
+      bindLazyThumb(preview, EX.api.thumbUrl(item.id));
+    } else {
+      let icon = isFolder ? '📁' : '📄';
+      if (!isFolder) {
+        if (EX.isImage(item)) icon = '🖼';
+        else if (EX.isVideo(item)) icon = '🎞';
+        else if (EX.isPdf(item)) icon = '📕';
+        else if (EX.isText(item)) icon = '📝';
+      }
+      preview = h('span', { class: 'grid-icon-placeholder' }, icon);
     }
 
-    return grid;
+    const nameEl = h('div', { class: 'grid-name', title: item.name }, item.name);
+
+    if ((EX.state.mode === 'search' || EX.state.mode === 'tag') && item.pathText) {
+      nameEl.appendChild(h('div', {
+        class: 'item-path-sub',
+        onclick: (e) => {
+          e.stopPropagation();
+          if (item.parentId) EX.navigate(item.parentId);
+        }
+      }, '📂 ' + item.pathText));
+    }
+
+    const card = h('div', {
+      class: `grid-card ${isSelected ? 'selected' : ''}`,
+      onclick: (e) => {
+        EX.toggleSelect(item.id, e);
+      },
+      ondblclick: (e) => {
+        e.stopPropagation();
+        if (isFolder) EX.navigate(item.id);
+        else openItem(item);
+      }
+    },
+      checkbox,
+      h('div', { class: 'grid-thumb-container' }, preview),
+      nameEl
+    );
+
+    card.dataset.nodeId = item.id;
+    card.draggable = true;
+
+    card.ondragstart = (e) => {
+      if (!EX.state.selection.has(item.id)) {
+        EX.setState({ selection: new Set([item.id]) });
+      }
+      const ids = Array.from(EX.state.selection);
+      e.dataTransfer.setData('application/json', JSON.stringify(ids));
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    if (isFolder) {
+      card.ondragover = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        card.classList.add('drag-over');
+      };
+      card.ondragleave = () => {
+        card.classList.remove('drag-over');
+      };
+      card.ondrop = async (e) => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        try {
+          const raw = e.dataTransfer.getData('application/json');
+          if (raw) {
+            const ids = JSON.parse(raw);
+            if (Array.isArray(ids) && !ids.includes(item.id)) {
+              await EX.api.move(ids, item.id);
+              EX.reload();
+            }
+          }
+        } catch (_) {}
+      };
+    }
+
+    card.oncontextmenu = (e) => {
+      e.preventDefault();
+      EX.openContextMenu(e.clientX, e.clientY, item);
+    };
+
+    attachTouchLongPress(card, (x, y) => {
+      EX.openContextMenu(x, y, item);
+    });
+
+    return card;
   };
 
   function openItem(node) {
@@ -603,7 +935,6 @@ window.EX = window.EX || {};
         if (event.target.checked) sel.add(id);
         else sel.delete(id);
       } else {
-        // Direct click
         if (sel.has(id) && sel.size === 1) {
           sel.clear();
         } else {
@@ -654,6 +985,64 @@ window.EX = window.EX || {};
 
       setTimeout(() => input.focus(), 50);
     });
+  };
+
+  // In-place rename
+  EX.promptRename = function (node) {
+    if (!node) return;
+    const nameEl = document.querySelector(`[data-node-id="${node.id}"] .item-name-text`) ||
+                   document.querySelector(`[data-node-id="${node.id}"] .grid-name`);
+    if (!nameEl) {
+      EX.promptRenameSelected();
+      return;
+    }
+
+    const origContent = nameEl.textContent;
+    nameEl.textContent = '';
+
+    const input = h('input', {
+      type: 'text',
+      class: 'inline-rename-input',
+      value: node.name
+    });
+
+    let committed = false;
+    async function commit(save) {
+      if (committed) return;
+      committed = true;
+      const newName = input.value.trim();
+
+      if (!save || !newName || newName === node.name) {
+        nameEl.textContent = origContent;
+        return;
+      }
+
+      try {
+        await EX.api.rename(node.id, newName);
+        EX.reload();
+      } catch (err) {
+        nameEl.textContent = origContent;
+        EX.toast(EX.t('err.' + err.code), 'error');
+      }
+    }
+
+    input.onkeydown = (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') commit(true);
+      else if (e.key === 'Escape') commit(false);
+    };
+
+    input.onblur = () => commit(true);
+
+    nameEl.appendChild(input);
+    input.focus();
+
+    const dot = node.name.lastIndexOf('.');
+    if (dot > 0 && node.kind === 'file') {
+      input.setSelectionRange(0, dot);
+    } else {
+      input.select();
+    }
   };
 
   EX.promptRenameSelected = function () {
@@ -764,35 +1153,59 @@ window.EX = window.EX || {};
       let selectedTargetId = null;
       const treeContainer = h('div', { class: 'folder-tree-container' });
 
-      async function renderFolderLevel(parent, container) {
-        const res = await EX.api.listNodes(parent, 'name', 'asc');
-        const folders = (res.items || []).filter((i) => i.kind === 'folder' && !ids.includes(i.id));
-
-        for (const f of folders) {
-          const itemRow = h('div', {
-            class: 'tree-item',
-            onclick: () => {
-              treeContainer.querySelectorAll('.tree-item').forEach((el) => el.classList.remove('selected'));
-              itemRow.classList.add('selected');
-              selectedTargetId = f.id;
-            }
-          }, '📁 ' + f.name);
-          container.appendChild(itemRow);
-        }
-      }
-
       // Root level choice
-      const rootItem = h('div', {
-        class: 'tree-item selected',
+      const rootRow = h('div', {
+        class: 'tree-node-row selected',
         onclick: () => {
-          treeContainer.querySelectorAll('.tree-item').forEach((el) => el.classList.remove('selected'));
-          rootItem.classList.add('selected');
+          treeContainer.querySelectorAll('.tree-node-row').forEach((r) => r.classList.remove('selected'));
+          rootRow.classList.add('selected');
           selectedTargetId = null;
         }
-      }, '📦 ' + EX.t('nav.all_files'));
-      treeContainer.appendChild(rootItem);
+      }, h('span', { class: 'tree-expander' }, ' '), h('span', {}, '📦 ' + EX.t('nav.all_files')));
+      treeContainer.appendChild(rootRow);
 
-      renderFolderLevel(null, treeContainer);
+      async function buildFolderTree(parentFolderId, container, isForbiddenParent = false) {
+        try {
+          const res = await EX.api.listNodes(parentFolderId, 'name', 'asc');
+          const folders = (res.items || []).filter((i) => i.kind === 'folder');
+
+          for (const f of folders) {
+            const isSelfOrDescendant = isForbiddenParent || ids.includes(f.id);
+            const childrenContainer = h('div', { class: 'tree-children', style: { display: 'none' } });
+            let isLoaded = false;
+            let isExpanded = false;
+
+            const expander = h('span', { class: 'tree-expander' }, '▶');
+            const row = h('div', {
+              class: `tree-node-row ${isSelfOrDescendant ? 'disabled' : ''}`,
+              onclick: (e) => {
+                e.stopPropagation();
+                if (isSelfOrDescendant) return;
+                treeContainer.querySelectorAll('.tree-node-row').forEach((r) => r.classList.remove('selected'));
+                row.classList.add('selected');
+                selectedTargetId = f.id;
+              }
+            }, expander, h('span', {}, '📁 ' + f.name));
+
+            expander.onclick = async (e) => {
+              e.stopPropagation();
+              isExpanded = !isExpanded;
+              expander.textContent = isExpanded ? '▼' : '▶';
+              childrenContainer.style.display = isExpanded ? 'flex' : 'none';
+
+              if (isExpanded && !isLoaded) {
+                isLoaded = true;
+                await buildFolderTree(f.id, childrenContainer, isSelfOrDescendant);
+              }
+            };
+
+            const nodeWrap = h('div', { class: 'tree-node-wrap' }, row, childrenContainer);
+            container.appendChild(nodeWrap);
+          }
+        } catch (_) {}
+      }
+
+      buildFolderTree(null, treeContainer);
 
       const submit = async () => {
         try {
@@ -818,24 +1231,64 @@ window.EX = window.EX || {};
     openModal(EX.t('dialog.tag_title'), (content, close) => {
       const tagsList = h('div', { class: 'tags-dialog-list' });
       const checkedTags = new Set();
+      const initialTags = new Set();
 
-      for (const tag of EX.state.tags || []) {
-        const checkbox = h('input', {
-          type: 'checkbox',
-          onchange: (e) => {
-            if (e.target.checked) checkedTags.add(tag.id);
-            else checkedTags.delete(tag.id);
+      if (ids.length === 1) {
+        const item = (EX.state.items || []).find((i) => i.id === ids[0]);
+        if (item && item.tagIds) {
+          for (const tid of item.tagIds) {
+            checkedTags.add(tid);
+            initialTags.add(tid);
           }
-        });
-        const tagRow = h('label', { class: 'tag-dialog-row' },
-          checkbox,
-          h('span', { class: 'tag-dot', style: { backgroundColor: tag.color } }),
-          h('span', {}, tag.name)
-        );
-        tagsList.appendChild(tagRow);
+        }
       }
 
-      // Add new tag row
+      function renderTagRows() {
+        tagsList.textContent = '';
+        for (const tag of EX.state.tags || []) {
+          const checkbox = h('input', {
+            type: 'checkbox',
+            checked: checkedTags.has(tag.id),
+            onchange: (e) => {
+              if (e.target.checked) checkedTags.add(tag.id);
+              else checkedTags.delete(tag.id);
+            }
+          });
+
+          const dot = h('span', { class: 'tag-dot', style: { backgroundColor: tag.color } });
+          const nameSpan = h('span', { style: { flex: '1' } }, tag.name);
+
+          const editBtn = h('button', {
+            class: 'btn btn-icon',
+            title: EX.t('dialog.edit_tag'),
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              editTagDialog(tag);
+            }
+          }, '✎');
+
+          const delBtn = h('button', {
+            class: 'btn btn-icon',
+            title: EX.t('action.delete'),
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              deleteTagPrompt(tag);
+            }
+          }, '🗑');
+
+          const row = h('div', { class: 'tag-manager-row' },
+            h('label', { class: 'tag-label-wrap' }, checkbox, dot, nameSpan),
+            h('div', { class: 'tag-row-actions' }, editBtn, delBtn)
+          );
+
+          tagsList.appendChild(row);
+        }
+      }
+
+      renderTagRows();
+
       const newTagName = h('input', { type: 'text', class: 'form-input', placeholder: EX.t('dialog.new_tag_name') });
       const newTagColor = h('input', { type: 'color', class: 'color-picker', value: '#3b82f6' });
       const addTagBtn = h('button', {
@@ -847,8 +1300,9 @@ window.EX = window.EX || {};
             const created = await EX.api.createTag(name, newTagColor.value);
             EX.state.tags = EX.state.tags || [];
             EX.state.tags.push(created);
-            close();
-            EX.openTagDialog(ids);
+            checkedTags.add(created.id);
+            newTagName.value = '';
+            renderTagRows();
           } catch (err) {
             EX.toast(EX.t('err.' + err.code), 'error');
           }
@@ -857,10 +1311,56 @@ window.EX = window.EX || {};
 
       const newTagSection = h('div', { class: 'new-tag-section' }, newTagName, newTagColor, addTagBtn);
 
+      function editTagDialog(tag) {
+        openModal(EX.t('dialog.edit_tag'), (editContent, editClose) => {
+          const nameInput = h('input', { type: 'text', class: 'form-input', value: tag.name });
+          const colorInput = h('input', { type: 'color', class: 'color-picker', value: tag.color || '#3b82f6' });
+          const saveBtn = h('button', {
+            class: 'btn btn-primary',
+            onclick: async () => {
+              const newName = nameInput.value.trim();
+              if (!newName) return;
+              try {
+                const updated = await EX.api.updateTag(tag.id, { name: newName, color: colorInput.value });
+                const idx = EX.state.tags.findIndex((t) => t.id === tag.id);
+                if (idx !== -1) EX.state.tags[idx] = updated;
+                editClose();
+                renderTagRows();
+              } catch (err) {
+                EX.toast(EX.t('err.' + err.code), 'error');
+              }
+            }
+          }, EX.t('action.save'));
+
+          editContent.appendChild(nameInput);
+          editContent.appendChild(colorInput);
+          editContent.appendChild(h('div', { class: 'modal-actions' },
+            h('button', { class: 'btn', onclick: editClose }, EX.t('action.cancel')),
+            saveBtn
+          ));
+        });
+      }
+
+      function deleteTagPrompt(tag) {
+        EX.confirmDialog(EX.t('dialog.tag_confirm_delete'), async () => {
+          try {
+            await EX.api.deleteTag(tag.id);
+            EX.state.tags = (EX.state.tags || []).filter((t) => t.id !== tag.id);
+            checkedTags.delete(tag.id);
+            renderTagRows();
+          } catch (err) {
+            EX.toast(EX.t('err.' + err.code), 'error');
+          }
+        });
+      }
+
       const submit = async () => {
         try {
-          const add = Array.from(checkedTags);
-          await EX.api.tagNodes(ids, add, []);
+          const add = Array.from(checkedTags).filter((t) => !initialTags.has(t));
+          const remove = Array.from(initialTags).filter((t) => !checkedTags.has(t));
+          if (add.length > 0 || remove.length > 0) {
+            await EX.api.tagNodes(ids, add, remove);
+          }
           close();
           EX.reload();
         } catch (err) {

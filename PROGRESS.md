@@ -19,7 +19,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T12 | ZipWriter + endpoint | ☑ | Xanh | Stored ZIP archive streaming, VaultStore.zipEntries hierarchy, POST /api/zip, tested with macOS unzip -t |
 | T13 | CLI macOS + integration script | ☑ | Xanh | CLI executable, curl integration test suite in CI with ALL PASSED |
 | T14 | Web: shell, login, i18n, theme, danh sách | ☑ | Xanh | Web shell, login with rate limit countdown, symmetric i18n (vi/en), list/grid views, responsive design |
-| T15 | Web: upload chia khối, thumbnail, nén ảnh client | ☐ | | |
+| T15 | Web: upload chia khối, thumbnail, nén ảnh client | ☑ | Xanh | 4MB chunked streaming upload with XHR progress & retry, client thumbnail generator (image/video), optional client JPEG compression |
 | T16 | Web: chọn nhiều, đổi tên, nhãn, thùng rác, tìm kiếm, menu | ☐ | | |
 | T17 | Web: xem trước ảnh/video/pdf/text | ☐ | | |
 | T18 | App iOS + KeepAlive + đóng gói IPA | ☐ | | |
