@@ -62,10 +62,12 @@ public final class Database {
     private var handle: OpaquePointer?
     public let queue = DispatchQueue(label: "exv.db")
     private var transactionDepth: Int = 0
+    private static let queueKey = DispatchSpecificKey<Void>()
 
     private static let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
     public init(path: String) throws {
+        queue.setSpecific(key: Database.queueKey, value: ())
         var db: OpaquePointer?
         let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX
         let rc = sqlite3_open_v2(path, &db, flags, nil)
@@ -199,7 +201,11 @@ public final class Database {
     }
 
     public func sync<T>(_ body: () throws -> T) rethrows -> T {
-        return try queue.sync(execute: body)
+        if DispatchQueue.getSpecific(key: Database.queueKey) != nil {
+            return try body()
+        } else {
+            return try queue.sync(execute: body)
+        }
     }
 
     private func bindValues(_ stmt: OpaquePointer, _ binds: [SQLValue]) throws {

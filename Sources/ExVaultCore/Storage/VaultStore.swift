@@ -84,20 +84,24 @@ public final class VaultStore {
 
     public func getNode(_ id: String) throws -> Node? {
         return try db.sync {
-            let sql = """
-            SELECT id, parent_id, kind, name, size, stored_size, mime, codec, has_thumb, created_at, modified_at, trashed_at
-            FROM nodes WHERE id = ?;
-            """
-            let nodes = try db.query(sql, [.text(id)]) { row in
-                mapNode(row, tagIds: [])
-            }
-            guard var node = nodes.first else {
-                return nil
-            }
-            let tags = try db.query("SELECT tag_id FROM node_tags WHERE node_id = ? ORDER BY tag_id ASC;", [.text(id)]) { $0.int(0) }
-            node.tagIds = tags
-            return node
+            try getNodeDirect(id)
         }
+    }
+
+    private func getNodeDirect(_ id: String) throws -> Node? {
+        let sql = """
+        SELECT id, parent_id, kind, name, size, stored_size, mime, codec, has_thumb, created_at, modified_at, trashed_at
+        FROM nodes WHERE id = ?;
+        """
+        let nodes = try db.query(sql, [.text(id)]) { row in
+            mapNode(row, tagIds: [])
+        }
+        guard var node = nodes.first else {
+            return nil
+        }
+        let tags = try db.query("SELECT tag_id FROM node_tags WHERE node_id = ? ORDER BY tag_id ASC;", [.text(id)]) { $0.int(0) }
+        node.tagIds = tags
+        return node
     }
 
     public func listChildren(parentId: String?, sort: SortKey, order: SortOrder) throws -> [Node] {
@@ -314,7 +318,7 @@ public final class VaultStore {
         }
         return try db.sync {
             try db.transaction {
-                guard var node = try getNode(id), node.trashedAt == nil else {
+                guard var node = try getNodeDirect(id), node.trashedAt == nil else {
                     throw StoreError(code: "not_found", message: "Node not found")
                 }
                 let targetLower = validName.lowercased()
@@ -351,7 +355,7 @@ public final class VaultStore {
 
                 var movedNodes: [Node] = []
                 for id in ids {
-                    guard var node = try getNode(id), node.trashedAt == nil else {
+                    guard var node = try getNodeDirect(id), node.trashedAt == nil else {
                         continue
                     }
                     if node.parentId == parentId {
@@ -536,8 +540,10 @@ public final class VaultStore {
         guard let fid = id else {
             return true
         }
-        let kind = try db.scalarInt("SELECT kind FROM nodes WHERE id = ? AND trashed_at IS NULL;", [.text(fid)])
-        return kind == 0
+        return try db.sync {
+            let kind = try db.scalarInt("SELECT kind FROM nodes WHERE id = ? AND trashed_at IS NULL;", [.text(fid)])
+            return kind == 0
+        }
     }
 
     // MARK: - Private Helpers
@@ -551,7 +557,11 @@ public final class VaultStore {
             }
             if visited.contains(cid) { break }
             visited.insert(cid)
-            current = try db.query("SELECT parent_id FROM nodes WHERE id = ?;", [.text(cid)]) { $0.optText(0) }.first ?? nil
+            let parents = try db.query("SELECT parent_id FROM nodes WHERE id = ?;", [.text(cid)]) { $0.optText(0) }
+            guard let first = parents.first, let nextParent = first else {
+                break
+            }
+            current = nextParent
         }
         return false
     }
