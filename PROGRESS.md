@@ -14,7 +14,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T07 | HTTP server core | ☑ | Xanh | POSIX socket HTTP/1.1, keep-alive, streaming chunked, connection cap, SIGPIPE ignore |
 | T08 | Router, Range, static files | ☑ | Xanh | URL routing with :id/wildcards, Range parser, StaticFiles with realpath traversal protection and ETag |
 | T09 | Auth | ☑ | Xanh | Credentials generator, SessionStore with TTL & sliding window, RateLimiter with lockout & bounded IP table |
-| T10 | API: nodes, folders, tags, trash, search, stats | ☐ | | |
+| T10 | API: nodes, folders, tags, trash, search, stats | ☑ | Xanh | ApiContext, AuthApi, NodesApi, TagsApi, StatsApi, VaultServer integration tested over HTTP |
 | T11 | API: upload, content, thumb | ☐ | | |
 | T12 | ZipWriter + endpoint | ☐ | | |
 | T13 | CLI macOS + integration script | ☐ | | |
