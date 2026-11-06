@@ -5,3 +5,8 @@ out/
 .DS_Store
 DerivedData/
 xcuserdata/
+
+# Internal agent rules & prompts
+AGENT_PROMPT.md
+agent-skills-v7.md
+Rules and Skills/
