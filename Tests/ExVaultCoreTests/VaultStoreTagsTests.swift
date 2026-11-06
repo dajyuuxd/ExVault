@@ -103,12 +103,17 @@ final class VaultStoreTagsTests: XCTestCase {
         XCTAssertEqual(updated2.count, 1)
         XCTAssertEqual(updated2[0].tagIds, [tag2.id])
 
-        // Delete tag2 and verify it is cascade removed from file1 and file2
+        // Delete tag2: f1 had only tag2, so f1 has no tags left. f2 still has tag1.
         try store.deleteTag(id: tag2.id)
         let node1 = try store.getNode(f1.id)
         let node2 = try store.getNode(f2.id)
         XCTAssertEqual(node1?.tagIds, [])
-        XCTAssertEqual(node2?.tagIds, [])
+        XCTAssertEqual(node2?.tagIds, [tag1.id])
+
+        // Now delete tag1 as well, so f2 also has no tags left
+        try store.deleteTag(id: tag1.id)
+        let node2After = try store.getNode(f2.id)
+        XCTAssertEqual(node2After?.tagIds, [])
     }
 
     func testSearchWithEscapingVietnameseAndTags() throws {
