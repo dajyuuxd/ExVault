@@ -279,6 +279,39 @@ public struct ApiError: Error, CustomStringConvertible {
     public static func insufficientStorage(_ m: String = "insufficient storage", code: String = "insufficient_storage") -> ApiError {
         return ApiError(status: 507, code: code, message: m)
     }
+
+    public static func from(_ e: StoreError) -> ApiError {
+        let status: Int
+        switch e.code {
+        case "bad_request", "invalid_name", "invalid_move":
+            status = 400
+        case "unauthorized", "bad_credentials":
+            status = 401
+        case "not_found":
+            status = 404
+        case "method_not_allowed":
+            status = 405
+        case "name_conflict", "offset_mismatch", "not_ready":
+            status = 409
+        case "too_large":
+            status = 413
+        case "range_not_satisfiable":
+            status = 416
+        case "rate_limited":
+            status = 429
+        case "busy":
+            status = 503
+        case "insufficient_storage":
+            status = 507
+        default:
+            status = 500
+        }
+        var extraMap: [String: Any]? = nil
+        if !e.extra.isEmpty {
+            extraMap = e.extra
+        }
+        return ApiError(status: status, code: e.code, message: e.message, extra: extraMap)
+    }
 }
 
 public enum HttpStatus {
