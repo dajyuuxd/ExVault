@@ -1,52 +1,65 @@
-# ExVault v1.0.0 ⚡
+# ExVault v1.0.0 ⚡ — Offline LAN Private Cloud Storage
 
-ExVault turns your vintage iOS devices (such as an old **iPhone 5s on iOS 12.5.8**) into a private, high-performance, self-hosted offline LAN cloud vault.
+> **Transform legacy iOS devices (iPhone 5s / iOS 12.0+) into a high-performance, private, self-hosted offline LAN cloud storage vault — 100% offline, zero Internet required, zero external dependencies.**
 
 ---
 
-## 🌟 Highlights & Features
+## 🌟 Key Highlights & Features
 
-- **Zero External Dependencies**: 100% native Swift 5 and POSIX sockets. Zero CocoaPods, zero SPM dependencies in the iOS target, zero external JS libraries or CDNs.
-- **Engineered for Legacy Devices**: Tailored for **iOS 12.0+** with 64-bit arm64 architecture (iPhone 5s / iPad Air 1 / iPad mini 2 and newer).
-- **Strict RAM Budget (<80 MB)**: All HTTP uploads, downloads, range queries, and compression streams use 64KB rolling buffers to avoid jetsam watchdog termination on 1GB devices.
-- **On-the-Fly DEFLATE Compression**: Automatically detects compressible formats (text, source code, JSON, logs) and streams compressed data with Apple's native `Compression` framework.
-- **HTTP Range 206 Streaming**: Full support for video and audio scrubbing without requiring heavy on-device transcoding.
-- **Full-Featured Vanilla Web UI**:
-  - Bilingual localization (**Vietnamese** & **English**).
-  - Dual themes: Light Cream (`#f5f0e1`) & Deep Dark (`#111111`).
-  - List & Grid view (S / M / L).
-  - Multi-select (Shift / Ctrl / Cmd + A), drag-and-drop uploads, inline renaming (F2), folder hierarchy, tags, trash bin with restoration.
-  - Multi-file on-the-fly streaming ZIP downloads.
-  - Media previewer for photos (pan & zoom), video/audio, PDF, and syntax-aware text files.
-- **Always-On KeepAlive Engine**:
-  - In-memory silent audio playback loop prevents iOS background suspension.
-  - One-tap **[Dim screen]** button drops screen brightness to 0 with a pure black overlay to conserve battery and eliminate OLED/LCD burn-in.
-- **SQLite3 WAL Crash Recovery**: ACID metadata storage with automated reconciliation of interrupted uploads upon reboot.
+- 🚀 **Zero External Dependencies**: Built strictly with native **Swift 5** and POSIX sockets. No CocoaPods, no SwiftPM dependencies in the iOS target, no external JS frameworks, no CDNs, and no web fonts.
+- 📱 **Engineered for Vintage Hardware**: Runs smoothly on **iOS 12.0+** with 64-bit arm64 architecture (iPhone 5s, iPad Air 1, iPad mini 2 and newer). Steady-state memory footprint strictly under **80 MB RAM**.
+- 🎬 **Native Media Streaming**: Video and audio are streamed directly using `HTTP Range` requests (`206 Partial Content`), allowing instant seeking without battery-draining on-device transcoding.
+- 🗜️ **Adaptive On-the-Fly DEFLATE Compression**: Automatically detects compressible formats (text, source code, JSON, logs) and streams compressed data with Apple's native `Compression` framework. Photos, videos, and archives remain untouched.
+- 🎨 **Full-Featured Vanilla Web UI**:
+  - **Bilingual localization**: Seamless switching between **Tiếng Việt** and **English**.
+  - **Dual themes**: Deep Dark (`#111111`) & Light Cream (`#f5f0e1`).
+  - **Layouts**: Responsive List view & customizable Grid view (S / M / L).
+  - **Organization**: Drag-and-drop chunked uploads, inline renaming (`F2`), folder hierarchy, colored tags, and trash bin with instant restoration.
+  - **Instant ZIP Streaming**: Packs and streams selected files and folders as a `.zip` archive on the fly.
+  - **Built-in Media Viewer**: Full-screen previewers for photos (with smooth pan & zoom), video/audio, PDF, and syntax-aware text documents.
+- 🔋 **Always-On Background & Screen Dimmer**:
+  - In-memory silent audio playback loop keeps the server active in background.
+  - One-tap **[Dim screen]** button drops screen brightness to 0 with a pure black overlay to conserve battery, minimize heat, and eliminate OLED/LCD burn-in during 24/7 plugged-in operation.
+- 🛡️ **SQLite3 WAL Crash Resilience**: ACID metadata storage with automated reconciliation of interrupted uploads upon reboot (`.part` cleanup and WAL journal recovery).
 
 ---
 
 ## 📦 Release Assets
 
-- **`ExVault-unsigned.ipa`**: The iOS application bundle for iOS 12.0+ devices.
-- **`exvault-cli`**: Standalone executable CLI server for macOS.
+| Asset Name | Target Platform | Description |
+|---|---|---|
+| **`ExVault-unsigned.ipa`** | iOS 12.0+ (arm64) | Standalone application bundle for iPhone / iPad |
+| **`exvault-cli`** | macOS (x86_64 / arm64) | Lightweight standalone terminal server for Mac |
 
 ---
 
 ## 📲 Installation Guide
 
 ### iOS App (`ExVault-unsigned.ipa`)
-1. Download `ExVault-unsigned.ipa` on your computer or device.
-2. Install via your preferred tool on your jailbroken / sideloaded device:
-   - **TrollStore** (iOS 14.0 - 17.0): Open in TrollStore directly.
-   - **AltStore / Sideloadly**: Sideload with your Apple ID.
-   - **Filza / AppSync Unified** (iOS 12.0 - 14.x jailbroken): Install `AppSync Unified` from Karen's Repo (`cydia.akemi.ai`), open the `.ipa` in Filza and tap **Install**.
-   - **Terminal / SSH**: Run `ipainstaller ExVault-unsigned.ipa`.
-3. Open **ExVault** on your iPhone, connect to local Wi-Fi, and plug into a charger.
-4. Note the URL and temporary credentials shown on the screen (e.g. `http://192.168.1.15:8080`).
-5. Open the URL in any modern browser on your PC or phone and enjoy your private local cloud!
+
+1. **Download**: Download `ExVault-unsigned.ipa` from the Assets below.
+2. **Install on iOS**:
+   * **Jailbroken Devices (iOS 12.0 – 14.x)**:
+     1. Install **AppSync Unified** from Karen's repo (`https://cydia.akemi.ai/`) via Cydia/Sileo/Zebra.
+     2. Transfer `ExVault-unsigned.ipa` to your iPhone (via AirDrop, Filza, or Safari download).
+     3. Open the `.ipa` in **Filza** and tap **Install**.
+   * **TrollStore (iOS 14.0 – 17.0)**:
+     * Open `ExVault-unsigned.ipa` directly in TrollStore to install permanently without revokes.
+   * **AltStore / Sideloadly (Non-jailbroken)**:
+     * Sideload `ExVault-unsigned.ipa` using your Apple ID via AltStore or Sideloadly from your PC/Mac.
+3. **Usage**:
+   * Launch **ExVault** on your iPhone, connect to local Wi-Fi, and plug into a charger.
+   * Note the URL and temporary credentials shown on the screen (e.g. `http://192.168.1.15:8080`).
+   * Tap **[Dim screen]** to keep the phone running cool with a black display.
+   * On any PC, tablet, or smartphone in the same Wi-Fi, open the URL in your browser and log in!
 
 ### macOS CLI (`exvault-cli`)
+
 ```bash
 chmod +x exvault-cli
-./exvault-cli --port 8080 --data-dir ~/ExVaultData --web-root ./Web
+./exvault-cli --port 8080 --data ~/ExVaultData --web ./Web
 ```
+
+---
+
+*Open Source Repository*: [https://github.com/dajyuuxd/ExVault](https://github.com/dajyuuxd/ExVault)
