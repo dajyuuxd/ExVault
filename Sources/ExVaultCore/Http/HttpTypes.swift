@@ -137,6 +137,11 @@ public extension ResponseWriter {
             try write(base, count: data.count)
         }
     }
+
+    func write(_ buffer: UnsafeRawBufferPointer) throws {
+        guard let base = buffer.baseAddress, buffer.count > 0 else { return }
+        try write(base, count: buffer.count)
+    }
 }
 
 public enum ResponseBody {
