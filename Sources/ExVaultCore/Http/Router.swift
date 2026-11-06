@@ -91,7 +91,8 @@ public final class Router {
             return HttpResponse.error(ApiError.notFound("Route not found"))
         }
 
-        guard let targetRoute = matchingRoutes.first(where: { $0.method == req.method }) else {
+        guard let targetRoute = matchingRoutes.first(where: { $0.method == req.method })
+            ?? (req.method == "HEAD" ? matchingRoutes.first(where: { $0.method == "GET" }) : nil) else {
             let allowedMethods = Array(Set(matchingRoutes.map { $0.method })).sorted().joined(separator: ", ")
             return HttpResponse(
                 status: 405,
