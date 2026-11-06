@@ -45,10 +45,13 @@ public enum Log {
         currentSink?(line)
     }
 
-    /// Returns a copy of the most recent log lines (up to 200 entries).
-    public static func recentLines() -> [String] {
+    /// Returns a copy of the most recent log lines (up to 200 entries, or up to `limit` entries if specified).
+    public static func recentLines(_ limit: Int? = nil) -> [String] {
         lock.lock()
         defer { lock.unlock() }
+        if let limit = limit, limit > 0 {
+            return Array(buffer.suffix(limit))
+        }
         return buffer
     }
 

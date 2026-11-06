@@ -37,7 +37,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 try mutableDir.setResourceValues(values)
 
                 // Locate Web root in bundle resources
-                let webRoot = Bundle.main.resourceURL!.appendingPathComponent("Web")
+                let resourceURL = Bundle.main.resourceURL ?? Bundle.main.bundleURL
+                let webRoot = resourceURL.appendingPathComponent("Web")
 
                 let config = VaultConfig(dataDir: dataDir, webRoot: webRoot, port: 8080)
                 let srv = try VaultServer(config: config)

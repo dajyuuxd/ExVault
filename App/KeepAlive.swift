@@ -83,10 +83,7 @@ final class KeepAlive {
             try session.setActive(true)
 
             let wavData = SilentWav.make(seconds: 1)
-            let tempUrl = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("silence.wav")
-            try wavData.write(to: tempUrl, options: .atomic)
-
-            let player = try AVAudioPlayer(contentsOf: tempUrl)
+            let player = try AVAudioPlayer(data: wavData)
             player.numberOfLoops = -1
             player.volume = 0.01 // Minimal non-zero volume so iOS does not suspend the audio session
             player.prepareToPlay()

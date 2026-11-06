@@ -208,6 +208,11 @@ final class UtilTests: XCTestCase {
         XCTAssertTrue(lines[0].contains("[I]"))
         XCTAssertTrue(lines[1].contains("[W]"))
         XCTAssertTrue(lines[2].contains("[E]"))
+
+        let last2 = Log.recentLines(2)
+        XCTAssertEqual(last2.count, 2)
+        XCTAssertTrue(last2[0].contains("[W]"))
+        XCTAssertTrue(last2[1].contains("[E]"))
         Log.sink = nil
     }
 
