@@ -262,6 +262,9 @@ check "Stats fileCount is 2 after purge" '[ "$STATS_FILES" = "2" ]'
 INDEX_CONTENT=$(curl -sS "$EXVAULT_URL/")
 check "GET / returns index.html containing ExVault" 'echo "$INDEX_CONTENT" | grep -q "ExVault"'
 
+APP_JS_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$EXVAULT_URL/js/app.js")
+check "GET /js/app.js returns 200" '[ "$APP_JS_CODE" = "200" ]'
+
 TRAVERSAL_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$EXVAULT_URL/js/../x")
 check "Path traversal /js/../x returns 404" '[ "$TRAVERSAL_CODE" = "404" ]'
 
