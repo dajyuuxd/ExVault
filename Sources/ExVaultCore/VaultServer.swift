@@ -3,7 +3,7 @@
 import Foundation
 
 public enum ExVaultInfo {
-    public static let version = "1.0"
+    public static let version = "1.0.1"
 }
 
 public struct VaultConfig {

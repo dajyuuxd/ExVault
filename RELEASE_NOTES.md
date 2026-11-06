@@ -1,6 +1,19 @@
-# ExVault v1.0.0 ⚡ — Offline LAN Private Cloud Storage
+# ExVault v1.0.1 ⚡ — Offline LAN Private Cloud Storage
 
 > **Transform legacy iOS devices (iPhone 5s / iOS 12.0+) into a high-performance, private, self-hosted offline LAN cloud storage vault — 100% offline, zero Internet required, zero external dependencies.**
+
+---
+
+## 🆕 What's New in v1.0.1 (Minor Update)
+
+- 🔑 **Direct Credential Printing**:
+  - The server startup log now immediately outputs the active access credentials to console stdout and the in-app log ring buffer:
+    `Login at http://<IP>:8080 with user: <username> pass: <password>`
+- 📱 **Clean Dashboard UX & Direct Pass Display**:
+  - Password is now rendered directly and prominently on the iPhone display in bold monospace (`Pass   : <password>`) right underneath `User   : <username>`.
+- 🧹 **Removed Redundant Copy Button**:
+  - Eliminated the unnecessary `Copy pass` button from the iOS interface to keep the dashboard minimal. The app now features a single, clean **[Dim screen]** action button for 24/7 power-saving operation.
+- 🏷️ **Version Bump**: Bumped core version and bundle identifier to `1.0.1` (`CFBundleVersion 2`).
 
 ---
 
@@ -42,7 +55,7 @@
    * **Jailbroken Devices (iOS 12.0 – 14.x)**:
      1. Install **AppSync Unified** from Karen's repo (`https://cydia.akemi.ai/`) via Cydia/Sileo/Zebra.
      2. Transfer `ExVault-unsigned.ipa` to your iPhone (via AirDrop, Filza, or Safari download).
-     3. Open the `.ipa` in **Filza** and tap **Install**.
+     3. Open the `.ipa` in **Filza** và chọn **Install**.
    * **TrollStore (iOS 14.0 – 17.0)**:
      * Open `ExVault-unsigned.ipa` directly in TrollStore to install permanently without revokes.
    * **AltStore / Sideloadly (Non-jailbroken)**:

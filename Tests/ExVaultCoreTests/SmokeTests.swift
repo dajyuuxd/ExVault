@@ -5,6 +5,6 @@ import XCTest
 
 final class SmokeTests: XCTestCase {
     func testVersion() {
-        XCTAssertEqual(ExVaultInfo.version, "1.0")
+        XCTAssertEqual(ExVaultInfo.version, "1.0.1")
     }
 }
