@@ -1,4 +1,4 @@
-// Server credentials and generation with unambiguous character sets.
+// Server credentials and generation with simple username and 6-digit numeric PIN.
 
 import Foundation
 
@@ -11,29 +11,9 @@ public struct Credentials: Equatable {
         self.password = password
     }
 
-    // Unambiguous character tables:
-    // Username: 23 chars (omits i, l, o)
-    private static let userChars = Array("abcdefghjkmnpqrstuvwxyz")
-    // Password: 31 chars (omits i, l, o, 0, 1)
-    private static let passChars = Array("abcdefghjkmnpqrstuvwxyz23456789")
-
+    /// Generates credentials with username 'admin' and a 6-digit numeric PIN (e.g. "582194").
     public static func generate() -> Credentials {
-        var rng = SystemRandomNumberGenerator()
-
-        var user = ""
-        user.reserveCapacity(5)
-        for _ in 0..<5 {
-            let idx = Int.random(in: 0..<userChars.count, using: &rng)
-            user.append(userChars[idx])
-        }
-
-        var pass = ""
-        pass.reserveCapacity(8)
-        for _ in 0..<8 {
-            let idx = Int.random(in: 0..<passChars.count, using: &rng)
-            pass.append(passChars[idx])
-        }
-
-        return Credentials(username: user, password: pass)
+        let pin = String(format: "%06d", Int.random(in: 100000...999999))
+        return Credentials(username: "admin", password: pin)
     }
 }

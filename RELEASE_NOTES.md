@@ -1,19 +1,30 @@
-# ExVault v1.0.1 ⚡ — Offline LAN Private Cloud Storage
+# ExVault v1.0.2 ⚡ — Offline LAN Private Cloud Storage
 
 > **Transform legacy iOS devices (iPhone 5s / iOS 12.0+) into a high-performance, private, self-hosted offline LAN cloud storage vault — 100% offline, zero Internet required, zero external dependencies.**
 
 ---
 
-## 🆕 What's New in v1.0.1 (Minor Update)
+## 🆕 What's New in v1.0.2
 
-- 🔑 **Direct Credential Printing**:
-  - The server startup log now immediately outputs the active access credentials to console stdout and the in-app log ring buffer:
-    `Login at http://<IP>:8080 with user: <username> pass: <password>`
-- 📱 **Clean Dashboard UX & Direct Pass Display**:
-  - Password is now rendered directly and prominently on the iPhone display in bold monospace (`Pass   : <password>`) right underneath `User   : <username>`.
-- 🧹 **Removed Redundant Copy Button**:
-  - Eliminated the unnecessary `Copy pass` button from the iOS interface to keep the dashboard minimal. The app now features a single, clean **[Dim screen]** action button for 24/7 power-saving operation.
-- 🏷️ **Version Bump**: Bumped core version and bundle identifier to `1.0.1` (`CFBundleVersion 2`).
+- 🔢 **Simple Credentials (Username & 6-Digit PIN)**:
+  - Replaced complex random character passwords with a friendly, memorable 6-digit numeric PIN integer (e.g. `User: admin`, `Pass: 482915`).
+- 📱 **Clean, Regular Monospace Typography**:
+  - The password line on the iPhone dashboard is now displayed in clean, regular monospace font matching the rest of the interface (`configureMonospaceLabel`), removing unnecessary bold styling.
+- 📡 **Real-Time Connection Keep-Alive & Fast Disconnect Detection**:
+  - Added background heartbeat ping (`/api/ping` every 5 seconds) to maintain active sessions while browsing.
+  - Reduced idle disconnection timeout from 7 days down to **15 seconds** (15,000 ms).
+  - Integrated `navigator.sendBeacon('/api/logout')` on page unload/close for instant session release (0 ms).
+  - Active session counter on the iPhone dashboard (`Sessions: X/3`) now accurately drops immediately when a user closes the tab or disconnects from Wi-Fi.
+- 📝 **Comprehensive, Meaningful Activity Logging**:
+  - Enriched server log buffer with detailed operational events:
+    - Login success & failed attempts with remote IP.
+    - File upload initiation, completion, and cancellation with byte sizes.
+    - File download requests with byte sizes and Range requests.
+    - Folder creation, rename, move, and trash/restore actions.
+    - Session connections, timeouts, and logouts with active counts.
+    - HTTP API requests and response status codes.
+- 🏷️ **Version Bump**:
+  - Core version updated to `1.0.2` (`CFBundleShortVersionString: 1.0.2`, `CFBundleVersion: 3`).
 
 ---
 
@@ -62,7 +73,7 @@
      * Sideload `ExVault-unsigned.ipa` using your Apple ID via AltStore or Sideloadly from your PC/Mac.
 3. **Usage**:
    * Launch **ExVault** on your iPhone, connect to local Wi-Fi, and plug into a charger.
-   * Note the URL and temporary credentials shown on the screen (e.g. `http://192.168.1.15:8080`).
+   * Note the URL and credentials shown on the screen (e.g. `http://192.168.1.15:8080`, User: `admin`, Pass: `482915`).
    * Tap **[Dim screen]** to keep the phone running cool with a black display.
    * On any PC, tablet, or smartphone in the same Wi-Fi, open the URL in your browser and log in!
 

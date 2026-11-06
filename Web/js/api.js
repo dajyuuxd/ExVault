@@ -105,6 +105,10 @@ window.EX = window.EX || {};
       return EX.api.post('/api/logout', {});
     },
 
+    ping() {
+      return EX.api.post('/api/ping', {});
+    },
+
     me() {
       return EX.api.get('/api/me');
     },

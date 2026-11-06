@@ -60,11 +60,11 @@ Install the IPA onto your jailbroken iOS device (requires **AppSync Unified** or
 1. Connect your iPhone to your local Wi-Fi network and plug it into a charger.
 2. Open **ExVault**. The screen displays your connection details:
    ```text
-   EXVAULT  v1.0.1
+   EXVAULT  v1.0.2
    Status   : RUNNING  (uptime 00:05:12)
    URL      : http://192.168.1.15:8080
-   User     : kxqmt
-   Pass     : p7f3n8zw
+   User     : admin
+   Pass     : 482915
    Disk     : 7.8 GB free
    Sessions : 1/3
    ```

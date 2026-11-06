@@ -35,6 +35,8 @@ public enum FilesApi: ApiModule {
                 )
             }
 
+            Log.info("Download: '\(node.name)' (\(info.size) B)")
+
             // 2. Codec: raw (0) vs zlib (1)
             if info.codec == 0 {
                 let rangeResult = RangeParser.parse(header: req.headers["range"], size: info.size)

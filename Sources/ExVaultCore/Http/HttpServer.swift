@@ -478,6 +478,10 @@ public final class HttpServer {
 
             let response = handler(request)
 
+            if request.path.hasPrefix("/api/") && request.path != "/api/ping" {
+                Log.info("\(request.method) \(request.path) -> \(response.status)")
+            }
+
             var responseHeaders = response.headers
             let userConn = responseHeaders.first { $0.0.caseInsensitiveCompare("connection") == .orderedSame }?.1
             let shouldClose = (userConn?.lowercased() == "close") || !clientKeepAlive || bodyReader.shouldCloseConnection

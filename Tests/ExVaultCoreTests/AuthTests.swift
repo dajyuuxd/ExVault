@@ -6,37 +6,18 @@ import XCTest
 final class AuthTests: XCTestCase {
 
     func testCredentialsGeneration() {
-        let userAllowed = Set("abcdefghjkmnpqrstuvwxyz")
-        let passAllowed = Set("abcdefghjkmnpqrstuvwxyz23456789")
-
         var generatedPairs = Set<String>()
 
-        for _ in 0..<200 {
+        for _ in 0..<100 {
             let creds = Credentials.generate()
-            XCTAssertEqual(creds.username.count, 5)
-            XCTAssertEqual(creds.password.count, 8)
-
-            for ch in creds.username {
-                XCTAssertTrue(userAllowed.contains(ch), "Unexpected char \(ch) in username")
-            }
-            for ch in creds.password {
-                XCTAssertTrue(passAllowed.contains(ch), "Unexpected char \(ch) in password")
-            }
-
-            // Disallowed chars check
-            XCTAssertFalse(creds.username.contains("i"))
-            XCTAssertFalse(creds.username.contains("l"))
-            XCTAssertFalse(creds.username.contains("o"))
-            XCTAssertFalse(creds.password.contains("i"))
-            XCTAssertFalse(creds.password.contains("l"))
-            XCTAssertFalse(creds.password.contains("o"))
-            XCTAssertFalse(creds.password.contains("0"))
-            XCTAssertFalse(creds.password.contains("1"))
+            XCTAssertEqual(creds.username, "admin")
+            XCTAssertEqual(creds.password.count, 6)
+            XCTAssertTrue(creds.password.allSatisfy { $0.isNumber })
 
             generatedPairs.insert("\(creds.username):\(creds.password)")
         }
 
-        XCTAssertEqual(generatedPairs.count, 200, "200 generated credentials pairs should all be unique")
+        XCTAssertGreaterThan(generatedPairs.count, 50, "Generated PINs should have high uniqueness")
     }
 
     func testSessionStoreLifecycle() {

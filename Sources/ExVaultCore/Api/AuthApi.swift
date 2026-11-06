@@ -1,4 +1,4 @@
-// Authentication and system endpoints: health, login, logout, and me.
+// Authentication and system endpoints: health, login, logout, me, and heartbeat ping.
 
 import Foundation
 
@@ -14,10 +14,19 @@ public enum AuthApi: ApiModule {
             return HttpResponse.jsonRaw(["ok": true, "version": ExVaultInfo.version])
         }
 
+        // POST /api/ping & GET /api/ping (Heartbeat)
+        r.add("POST", "/api/ping", auth: true) { _ in
+            return HttpResponse(status: 204, headers: [], body: .none)
+        }
+        r.add("GET", "/api/ping", auth: true) { _ in
+            return HttpResponse(status: 204, headers: [], body: .none)
+        }
+
         // POST /api/login
         r.add("POST", "/api/login", auth: false) { req in
             if let waitSecs = ctx.limiter.allowed(ip: req.remoteIP) {
                 let retryAfter = String(Int(ceil(waitSecs)))
+                Log.warn("Auth: Rate limited IP \(req.remoteIP), retry after \(retryAfter)s")
                 return HttpResponse(
                     status: 429,
                     headers: [
@@ -34,12 +43,14 @@ public enum AuthApi: ApiModule {
 
             guard userMatch && passMatch else {
                 ctx.limiter.recordFailure(ip: req.remoteIP)
+                Log.warn("Auth: Login failed for user '\(loginReq.username)' from \(req.remoteIP)")
                 return HttpResponse.error(ApiError.unauthorized("Invalid username or password", code: "bad_credentials"))
             }
 
             ctx.limiter.recordSuccess(ip: req.remoteIP)
             let token = ctx.sessions.create()
             let cookie = "exv_sid=\(token); Path=/; HttpOnly; SameSite=Strict; Max-Age=604800"
+            Log.info("Auth: Login success for '\(loginReq.username)' from \(req.remoteIP)")
 
             return HttpResponse(
                 status: 204,
@@ -49,7 +60,7 @@ public enum AuthApi: ApiModule {
         }
 
         // POST /api/logout
-        r.add("POST", "/api/logout", auth: true) { req in
+        r.add("POST", "/api/logout", auth: false) { req in
             let token = req.cookies["exv_sid"]
             ctx.sessions.destroy(token)
             let cookie = "exv_sid=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0"

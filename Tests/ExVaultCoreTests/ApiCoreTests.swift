@@ -131,7 +131,7 @@ final class ApiCoreTests: XCTestCase {
         let health = try req(path: "/api/health")
         XCTAssertEqual(health.status, 200)
         XCTAssertEqual(health.json?["ok"] as? Bool, true)
-        XCTAssertEqual(health.json?["version"] as? String, "1.0.1")
+        XCTAssertEqual(health.json?["version"] as? String, "1.0.2")
 
         // 2. Login wrong password -> 401
         let badLogin = try req(

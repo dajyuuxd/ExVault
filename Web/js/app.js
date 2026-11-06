@@ -6,6 +6,46 @@ window.EX = window.EX || {};
   const EX = window.EX;
   const h = EX.h;
 
+  let heartbeatTimer = null;
+  function startHeartbeat() {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    heartbeatTimer = setInterval(async () => {
+      if (!EX.state.user) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+        return;
+      }
+      try {
+        await EX.api.ping();
+      } catch (err) {
+        if (err && err.status === 401) {
+          stopHeartbeat();
+          EX.onUnauthorized();
+        }
+      }
+    }, 5000);
+  }
+
+  function stopHeartbeat() {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+  }
+
+  // Rapid disconnect detection on tab close / reload / navigation
+  window.addEventListener('beforeunload', () => {
+    if (EX.state.user && navigator.sendBeacon) {
+      navigator.sendBeacon('/api/logout', '');
+    }
+  });
+
+  window.addEventListener('pagehide', () => {
+    if (EX.state.user && navigator.sendBeacon) {
+      navigator.sendBeacon('/api/logout', '');
+    }
+  });
+
   EX.init = async function () {
     // 1. Initialize Theme
     let theme = typeof localStorage !== 'undefined' ? localStorage.getItem('exv.theme') : null;
@@ -17,6 +57,7 @@ window.EX = window.EX || {};
     // 2. Setup unauthorized listener
     EX.onUnauthorized = function () {
       EX.state.user = null;
+      stopHeartbeat();
       EX.renderLogin();
     };
 
@@ -32,6 +73,7 @@ window.EX = window.EX || {};
       if (me && me.username) {
         EX.state.user = me.username;
         if (me.chunkSize) EX.state.limits.chunkSize = me.chunkSize;
+        startHeartbeat();
         handleRoute();
       } else {
         EX.renderLogin();
@@ -186,6 +228,7 @@ window.EX = window.EX || {};
           const me = await EX.api.me();
           EX.state.user = me.username;
           if (me.chunkSize) EX.state.limits.chunkSize = me.chunkSize;
+          startHeartbeat();
           handleRoute();
         } catch (err) {
           submitBtn.disabled = false;

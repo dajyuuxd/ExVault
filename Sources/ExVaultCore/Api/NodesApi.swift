@@ -130,6 +130,7 @@ public enum NodesApi: ApiModule {
             let body = try ctx.json(req, CreateFolderRequest.self)
             let parentId = (body.parentId == "root") ? nil : body.parentId
             let folder = try ctx.store.createFolder(parentId: parentId, name: body.name)
+            Log.info("Folder created: '\(folder.name)'")
             return HttpResponse.json(folder, status: 201)
         }
 
@@ -140,6 +141,7 @@ public enum NodesApi: ApiModule {
             }
             let body = try ctx.json(req, RenameRequest.self)
             let updated = try ctx.store.rename(id, to: body.name)
+            Log.info("Renamed '\(id)' -> '\(updated.name)'")
             return HttpResponse.json(updated)
         }
 
@@ -151,6 +153,7 @@ public enum NodesApi: ApiModule {
             }
             let targetParent = (body.parentId == "root") ? nil : body.parentId
             let moved = try ctx.store.move(body.ids, to: targetParent)
+            Log.info("Moved \(moved.count) items to \(targetParent ?? "root")")
             return HttpResponse.json(["items": moved])
         }
 
@@ -161,6 +164,7 @@ public enum NodesApi: ApiModule {
                 throw ApiError.badRequest("Exceeded maximum batch limit of 5000 IDs")
             }
             let count = try ctx.store.trash(body.ids)
+            Log.info("Moved \(count) item(s) to trash")
             return HttpResponse.json(["count": count])
         }
 
@@ -171,6 +175,7 @@ public enum NodesApi: ApiModule {
                 throw ApiError.badRequest("Exceeded maximum batch limit of 5000 IDs")
             }
             let count = try ctx.store.restore(body.ids)
+            Log.info("Restored \(count) item(s) from trash")
             return HttpResponse.json(["count": count])
         }
 
@@ -187,6 +192,7 @@ public enum NodesApi: ApiModule {
             for nodeId in deletedThumbs {
                 ctx.blobs.deleteThumb(nodeId: nodeId)
             }
+            Log.info("Purged \(count) item(s) permanently")
             return HttpResponse.json(["count": count])
         }
 
@@ -198,6 +204,16 @@ public enum NodesApi: ApiModule {
 
         // POST /api/trash/empty
         r.add("POST", "/api/trash/empty", auth: true) { _ in
+            let (count, deletedBlobs, deletedThumbs) = try ctx.store.emptyTrash()
+            for blobId in deletedBlobs {
+                ctx.blobs.delete(blobId: blobId)
+            }
+            for nodeId in deletedThumbs {
+                ctx.blobs.deleteThumb(nodeId: nodeId)
+            }
+            Log.info("Emptied trash: \(count) item(s) purged")
+            return HttpResponse.json(["count": count])
+        }
             let (count, deletedBlobs, deletedThumbs) = try ctx.store.emptyTrash()
             for blobId in deletedBlobs {
                 ctx.blobs.delete(blobId: blobId)

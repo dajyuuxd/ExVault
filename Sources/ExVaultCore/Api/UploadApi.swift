@@ -27,6 +27,7 @@ public enum UploadApi: ApiModule {
                 lastModified: body.lastModified,
                 compress: shouldCompress
             )
+            Log.info("Upload init: '\(body.name)' (\(body.size) B)")
 
             let payload: [String: Any] = [
                 "uploadId": info.id,
@@ -97,6 +98,7 @@ public enum UploadApi: ApiModule {
             let info = try ctx.uploads.info(id: id)
 
             if info.state == "done", let nodeId = info.nodeId, let node = try ctx.store.getNode(nodeId) {
+                Log.info("Upload finish: '\(node.name)' (\(node.size) B)")
                 var nodeJson: Any = NSNull()
                 if let data = try? JSONEncoder().encode(node) {
                     nodeJson = (try? JSONSerialization.jsonObject(with: data, options: [])) ?? NSNull()
@@ -117,6 +119,7 @@ public enum UploadApi: ApiModule {
                 throw ApiError.badRequest("Missing upload id")
             }
             try ctx.uploads.cancel(id: id)
+            Log.info("Upload cancel: \(id)")
             return HttpResponse(status: 204, headers: [], body: .none)
         }
     }

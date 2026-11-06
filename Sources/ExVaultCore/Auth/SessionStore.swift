@@ -17,7 +17,7 @@ public final class SessionStore {
 
     public init(
         maxSessions: Int = 3,
-        ttl: TimeInterval = 7 * 24 * 3600,
+        ttl: TimeInterval = 15.0, // 15s disconnect timeout
         now: @escaping () -> Date = Date.init
     ) {
         self.maxSessions = maxSessions
@@ -54,6 +54,7 @@ public final class SessionStore {
             expiresAt: now.addingTimeInterval(ttl),
             lastAccessedAt: now
         )
+        Log.info("Session opened (active: \(sessions.count)/\(maxSessions))")
         return token
     }
 
@@ -71,6 +72,7 @@ public final class SessionStore {
         let now = nowProvider()
         if session.expiresAt <= now {
             sessions.removeValue(forKey: token)
+            Log.info("Session expired (active: \(sessions.count)/\(maxSessions))")
             return false
         }
 
@@ -85,7 +87,9 @@ public final class SessionStore {
         guard let token = token, !token.isEmpty else { return }
         lock.lock()
         defer { lock.unlock() }
-        sessions.removeValue(forKey: token)
+        if sessions.removeValue(forKey: token) != nil {
+            Log.info("Session closed: logout (active: \(sessions.count)/\(maxSessions))")
+        }
     }
 
     public func count() -> Int {
@@ -97,6 +101,11 @@ public final class SessionStore {
 
     private func cleanExpired() {
         let now = nowProvider()
+        let countBefore = sessions.count
         sessions = sessions.filter { $0.value.expiresAt > now }
+        let countAfter = sessions.count
+        if countAfter < countBefore {
+            Log.info("Session disconnected: timed out (active: \(countAfter)/\(maxSessions))")
+        }
     }
 }

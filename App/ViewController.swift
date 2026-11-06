@@ -99,11 +99,7 @@ final class ViewController: UIViewController {
         configureMonospaceLabel(statusLabel)
         configureMonospaceLabel(urlLabel)
         configureMonospaceLabel(userLabel)
-
-        passLabel.font = UIFont(name: "Menlo-Bold", size: 18) ?? UIFont.monospacedDigitSystemFont(ofSize: 18, weight: .bold)
-        passLabel.textColor = .white
-        passLabel.numberOfLines = 0
-        passLabel.lineBreakMode = .byCharWrapping
+        configureMonospaceLabel(passLabel)
 
         configureMonospaceLabel(diskLabel)
         configureMonospaceLabel(sessionsLabel)
