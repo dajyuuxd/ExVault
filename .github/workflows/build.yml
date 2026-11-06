@@ -1,5 +1,14 @@
 name: build
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   core:
     runs-on: macos-latest
@@ -12,6 +21,12 @@ jobs:
         if: hashFiles('scripts/check-i18n.js') != ''
       - run: bash scripts/integration.sh        # có từ T13
         if: hashFiles('scripts/integration.sh') != ''
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exvault-cli-macos
+          path: .build/release/exvault-cli
+
   ios:
     runs-on: macos-latest
     steps:
@@ -38,3 +53,29 @@ jobs:
         with:
           name: ExVault-unsigned-ipa
           path: out/ExVault-unsigned.ipa
+
+  release:
+    needs: [core, ios]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download iOS IPA Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ExVault-unsigned-ipa
+          path: release-assets
+      - name: Download macOS CLI Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: exvault-cli-macos
+          path: release-assets
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "ExVault ${{ github.ref_name }}"
+          body_path: RELEASE_NOTES.md
+          files: |
+            release-assets/ExVault-unsigned.ipa
+            release-assets/exvault-cli
+          generate_release_notes: false
