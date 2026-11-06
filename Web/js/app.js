@@ -44,6 +44,14 @@ window.EX = window.EX || {};
   function handleRoute() {
     const hash = window.location.hash || '#/f/root';
 
+    if (hash.startsWith('#/v/')) {
+      const vid = decodeURIComponent(hash.slice('#/v/'.length));
+      if (EX.viewer && typeof EX.viewer.open === 'function') {
+        EX.viewer.open(vid, EX.state.items);
+      }
+      return;
+    }
+
     if (hash === '#/trash') {
       EX.setState({ mode: 'trash', parent: null, tagId: null, query: '' });
       EX.reload();

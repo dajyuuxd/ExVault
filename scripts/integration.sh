@@ -268,6 +268,9 @@ check "GET /js/app.js returns 200" '[ "$APP_JS_CODE" = "200" ]'
 UPLOAD_JS_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$EXVAULT_URL/js/upload.js")
 check "GET /js/upload.js returns 200" '[ "$UPLOAD_JS_CODE" = "200" ]'
 
+VIEWER_JS_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$EXVAULT_URL/js/viewer.js")
+check "GET /js/viewer.js returns 200" '[ "$VIEWER_JS_CODE" = "200" ]'
+
 TRAVERSAL_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "$EXVAULT_URL/js/../x")
 check "Path traversal /js/../x returns 404" '[ "$TRAVERSAL_CODE" = "404" ]'
 

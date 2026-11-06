@@ -104,7 +104,16 @@ window.EX = window.EX || {};
     'settings.max_edge': 'Cạnh dài tối đa',
     'settings.quality': 'Chất lượng',
     'settings.keep_orig': 'Giữ nguyên',
-    'settings.exif_warning': 'Lưu ý: Quá trình nén sẽ loại bỏ thông tin EXIF.'
+    'settings.exif_warning': 'Lưu ý: Quá trình nén sẽ loại bỏ thông tin EXIF.',
+    'viewer.zoom_in': 'Phóng to',
+    'viewer.zoom_out': 'Thu nhỏ',
+    'viewer.fit': 'Vừa khung',
+    'viewer.actual': 'Kích thước thật',
+    'viewer.prev': 'Trước',
+    'viewer.next': 'Sau',
+    'viewer.unsupported_video': 'Trình duyệt không hỗ trợ phát định dạng video này.',
+    'viewer.text_truncated': 'Tệp lớn hơn 512 KB, chỉ hiển thị phần đầu. Vui lòng tải về để xem đầy đủ.',
+    'viewer.loading': 'Đang tải...'
   };
 
   const en = {
@@ -206,7 +215,16 @@ window.EX = window.EX || {};
     'settings.max_edge': 'Max dimension',
     'settings.quality': 'Quality',
     'settings.keep_orig': 'Keep original',
-    'settings.exif_warning': 'Note: Compression strips EXIF metadata.'
+    'settings.exif_warning': 'Note: Compression strips EXIF metadata.',
+    'viewer.zoom_in': 'Zoom in',
+    'viewer.zoom_out': 'Zoom out',
+    'viewer.fit': 'Fit to screen',
+    'viewer.actual': 'Actual size',
+    'viewer.prev': 'Previous',
+    'viewer.next': 'Next',
+    'viewer.unsupported_video': 'Browser does not support playing this video format.',
+    'viewer.text_truncated': 'File is larger than 512 KB, showing preview only. Please download to view full content.',
+    'viewer.loading': 'Loading...'
   };
 
   const tables = { vi, en };
