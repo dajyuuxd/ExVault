@@ -63,14 +63,20 @@ public enum SortOrder: String {
 public struct StoreError: Error, CustomStringConvertible {
     public let code: String
     public let message: String
+    public var extra: [String: Int64] = [:]
 
-    public init(code: String, message: String) {
+    public init(code: String, message: String, extra: [String: Int64] = [:]) {
         self.code = code
         self.message = message
+        self.extra = extra
     }
 
     public var description: String {
-        return "StoreError(\(code): \(message))"
+        if extra.isEmpty {
+            return "StoreError(\(code): \(message))"
+        } else {
+            return "StoreError(\(code): \(message), extra: \(extra))"
+        }
     }
 }
 

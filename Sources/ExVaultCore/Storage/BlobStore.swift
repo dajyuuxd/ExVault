@@ -69,7 +69,12 @@ public final class BlobStore {
         return nil
     }
 
+    public var diskFreeProvider: (() -> Int64)?
+
     public func diskFree() -> Int64 {
+        if let provider = diskFreeProvider {
+            return provider()
+        }
         do {
             let attrs = try FileManager.default.attributesOfFileSystem(forPath: root.path)
             if let free = attrs[.systemFreeSize] as? NSNumber {
