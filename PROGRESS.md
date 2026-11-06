@@ -10,7 +10,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T03 | VaultStore: nodes, thùng rác | ☑ | Xanh | Node hierarchy, sorting, CTE trash, purge, deadlock-free sync |
 | T04 | VaultStore: tags, search, stats | ☑ | Xanh | Tags CRUD, LIKE escape search, vault statistics |
 | T05 | BlobStore + Compressor | ☑ | Xanh | Sharded blob storage, streaming Apple zlib raw DEFLATE |
-| T06 | UploadManager | ☐ | | |
+| T06 | UploadManager | ☑ | Xanh | Chunked upload, quota check, CRC32 verification, auto-compression, startup cleanup |
 | T07 | HTTP server core | ☐ | | |
 | T08 | Router, Range, static files | ☐ | | |
 | T09 | Auth | ☐ | | |
