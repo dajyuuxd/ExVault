@@ -178,7 +178,7 @@ final class ViewController: UIViewController {
 
         // IP / URL
         let port = server?.boundPort ?? 8080
-        let ips = Net.localIpv4Addresses()
+        let ips = Net.localIPv4Addresses()
         if ips.isEmpty {
             urlLabel.text = "URL    : (no network)"
         } else {
@@ -187,7 +187,7 @@ final class ViewController: UIViewController {
         }
 
         // User and Pass
-        if let creds = server?.currentCredentials {
+        if let creds = server?.credentials {
             userLabel.text = "User   : \(creds.username)"
             passValueLabel.text = creds.password
         } else {
@@ -196,14 +196,14 @@ final class ViewController: UIViewController {
         }
 
         // Disk space
-        if let freeBytes = server?.diskFreeBytes {
-            diskLabel.text = "Disk   : \(formatBytes(freeBytes)) free"
+        if let server = server {
+            diskLabel.text = "Disk   : \(formatBytes(server.diskFreeBytes())) free"
         } else {
             diskLabel.text = "Disk   : -"
         }
 
         // Sessions count
-        let sessionCount = server?.activeSessionCount ?? 0
+        let sessionCount = server?.activeSessionCount() ?? 0
         sessionsLabel.text = "Sessions: \(sessionCount)/3"
 
         // Logs
@@ -216,7 +216,7 @@ final class ViewController: UIViewController {
     }
 
     @objc private func handleCopyPassPressed() {
-        if let pass = serverProvider()?.currentCredentials.password {
+        if let pass = serverProvider()?.credentials.password {
             UIPasteboard.general.string = pass
             copyPassButton.setTitle("Copied!", for: .normal)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
