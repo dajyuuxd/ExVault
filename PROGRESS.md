@@ -22,8 +22,8 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T15 | Web: upload chia khối, thumbnail, nén ảnh client | ☑ | Xanh | 4MB chunked streaming upload with XHR progress & retry, client thumbnail generator (image/video), optional client JPEG compression |
 | T16 | Web: chọn nhiều, đổi tên, nhãn, thùng rác, tìm kiếm, menu | ☑ | Xanh | Multi-selection (Shift/Ctrl/A), context menu & touch long-press, inline rename, tag CRUD, lazy move tree, cluster rendering |
 | T17 | Web: xem trước ảnh/video/pdf/text | ☑ | Xanh | Full-screen lightbox previewer (zoom/pan, video connection release, audio, PDF, 512KB range text) |
-| T18 | App iOS + KeepAlive + đóng gói IPA | ☐ | | |
-| T19 | Rà soát & tối ưu (tùy chọn) | ☐ | | |
+| T18 | App iOS + KeepAlive + đóng gói IPA | ☑ | Xanh | Native iOS 12+ app, SilentWav in-memory keep-alive loop, Dim screen, dashboard, unsigned IPA artifact |
+| T19 | Rà soát & tối ưu (tùy chọn) | ☑ | Xanh | Rà soát tài nguyên sạch (0 innerHTML, 0 Data(contentsOf), 0 try!, 0 fatalError), soak test script, README cập nhật rủi ro |
 
 ## Hướng dẫn kiểm tra thủ công trên iPhone (T18)
 1. Cài IPA (`ExVault-unsigned.ipa` từ GitHub Actions Artifacts qua AltStore / Sideloadly / TrollStore), mở app: màn hình đen hiển thị Uptime, URL LAN, User, Password, Disk free, Sessions, và Log.

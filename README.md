@@ -112,3 +112,16 @@ Install the IPA onto your jailbroken iOS device (requires **AppSync Unified** or
 Builds and automated tests are continuously executed on macOS runners via **GitHub Actions** (`.github/workflows/build.yml`):
 - **Core Library & macOS CLI**: Built with Swift Package Manager (`swift build`, `swift test`).
 - **iOS Application**: Built using **XcodeGen** (`xcodegen generate`) and `xcodebuild` targeting `arm64` device deployment without code signing.
+
+---
+
+## ⚠️ Operational Guidelines & Resilience
+
+1. **Power Supply & Aging Battery**: Vintage devices (like iPhone 5s) often possess degraded lithium batteries. Always keep the device connected to a stable 5V/1A power adapter when serving files over LAN.
+2. **Thermal & Display Care**: Use the **[Dim screen]** button in the app. This turns brightness to 0 and displays a black overlay, significantly lowering power draw, heat generation, and preventing backlight/OLED burn-in during 24/7 operation.
+3. **RAM Budget & iOS Jetsam Watchdog**: Older devices have 1GB of total RAM where iOS jetsam aggressively kills processes exceeding ~120MB. ExVault strictly streams all data using 64KB buffers (never loading full files or chunks into RAM) to guarantee steady-state memory below **80 MB**.
+4. **Crash Resilience & Power Loss**:
+   - SQLite runs in write-ahead log (`WAL`) mode with automatic journal recovery.
+   - Any upload interrupted by unexpected power failure or forced termination is automatically reconciled on the next boot: incomplete `.part` temporary files are pruned, and incomplete upload records are marked as `error`.
+5. **Storage & Backup Exclusion**: The vault storage directory (`<Documents>/ExVault`) is explicitly tagged with `isExcludedFromBackup = true` to prevent ballooning your iCloud or iTunes backup sizes.
+6. **Ephemeral Credentials**: Login username and password are regenerated upon each app launch. Active sessions are kept in volatile memory, while uploaded files and metadata persist across restarts.

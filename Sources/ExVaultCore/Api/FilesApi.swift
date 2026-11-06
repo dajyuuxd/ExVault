@@ -122,9 +122,11 @@ public enum FilesApi: ApiModule {
             }
 
             let thumbPath = ctx.blobs.thumbPath(forNode: id)
-            guard let data = try? Data(contentsOf: URL(fileURLWithPath: thumbPath)) else {
+            guard let fileHandle = FileHandle(forReadingAtPath: thumbPath) else {
                 throw ApiError.notFound("Thumbnail file missing on disk")
             }
+            let data = fileHandle.readDataToEndOfFile()
+            fileHandle.closeFile()
 
             return HttpResponse(
                 status: 200,
