@@ -11,7 +11,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T04 | VaultStore: tags, search, stats | ☑ | Xanh | Tags CRUD, LIKE escape search, vault statistics |
 | T05 | BlobStore + Compressor | ☑ | Xanh | Sharded blob storage, streaming Apple zlib raw DEFLATE |
 | T06 | UploadManager | ☑ | Xanh | Chunked upload, quota check, CRC32 verification, auto-compression, startup cleanup |
-| T07 | HTTP server core | ☐ | | |
+| T07 | HTTP server core | ☑ | Xanh | POSIX socket HTTP/1.1, keep-alive, streaming chunked, connection cap, SIGPIPE ignore |
 | T08 | Router, Range, static files | ☐ | | |
 | T09 | Auth | ☐ | | |
 | T10 | API: nodes, folders, tags, trash, search, stats | ☐ | | |
