@@ -42,6 +42,8 @@ final class ApiCoreTests: XCTestCase {
 
             let sessionConfig = URLSessionConfiguration.ephemeral
             sessionConfig.timeoutIntervalForRequest = 5.0
+            sessionConfig.httpShouldSetCookies = false
+            sessionConfig.httpCookieAcceptPolicy = .never
             self.session = URLSession(configuration: sessionConfig)
         } catch {
             XCTFail("Failed to start VaultServer in setUp: \(error)")
