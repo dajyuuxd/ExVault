@@ -317,7 +317,11 @@ public final class HttpServer {
                         break
                     }
                 }
-                if headerEndIndex != nil {
+                if let end = headerEndIndex {
+                    if end > 16 * 1024 {
+                        sendSimpleResponse(fd: fd, status: 431, body: "{\"error\":{\"code\":\"header_too_large\",\"message\":\"Header exceeds 16KB\"}}")
+                        return
+                    }
                     break
                 }
                 if bytesInBuffer >= 16 * 1024 {
@@ -328,6 +332,11 @@ public final class HttpServer {
 
             guard let endOfHeader = headerEndIndex else {
                 sendSimpleResponse(fd: fd, status: 431, body: "{\"error\":{\"code\":\"header_too_large\",\"message\":\"Header too large\"}}")
+                return
+            }
+
+            if endOfHeader > 16 * 1024 {
+                sendSimpleResponse(fd: fd, status: 431, body: "{\"error\":{\"code\":\"header_too_large\",\"message\":\"Header exceeds 16KB\"}}")
                 return
             }
 
