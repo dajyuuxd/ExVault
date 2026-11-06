@@ -23,8 +23,8 @@ final class SilentWavTests: XCTestCase {
         XCTAssertEqual(dataTag, "data")
 
         // Check data size field (offset 40..<44)
-        let dataSize = wav.subdata(in: 40..<44).withUnsafeBytes { $0.load(as: UInt32.self) }
-        XCTAssertEqual(UInt32(littleEndian: dataSize), 16000)
+        let dataSize = UInt32(wav[40]) | (UInt32(wav[41]) << 8) | (UInt32(wav[42]) << 16) | (UInt32(wav[43]) << 24)
+        XCTAssertEqual(dataSize, 16000)
 
         // Check that all sample bytes are 0
         let samples = wav.subdata(in: 44..<wav.count)
@@ -37,7 +37,7 @@ final class SilentWavTests: XCTestCase {
         let wav = SilentWav.make(seconds: 3)
         XCTAssertEqual(wav.count, 44 + 48000)
 
-        let dataSize = wav.subdata(in: 40..<44).withUnsafeBytes { $0.load(as: UInt32.self) }
-        XCTAssertEqual(UInt32(littleEndian: dataSize), 48000)
+        let dataSize = UInt32(wav[40]) | (UInt32(wav[41]) << 8) | (UInt32(wav[42]) << 16) | (UInt32(wav[43]) << 24)
+        XCTAssertEqual(dataSize, 48000)
     }
 }
