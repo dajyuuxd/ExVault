@@ -127,6 +127,8 @@ public final class VaultServer {
         NodesApi.register(r, apiCtx)
         TagsApi.register(r, apiCtx)
         StatsApi.register(r, apiCtx)
+        UploadApi.register(r, apiCtx)
+        FilesApi.register(r, apiCtx)
     }
 
     public func start() throws {
