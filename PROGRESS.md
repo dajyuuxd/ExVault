@@ -12,7 +12,7 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T05 | BlobStore + Compressor | ☑ | Xanh | Sharded blob storage, streaming Apple zlib raw DEFLATE |
 | T06 | UploadManager | ☑ | Xanh | Chunked upload, quota check, CRC32 verification, auto-compression, startup cleanup |
 | T07 | HTTP server core | ☑ | Xanh | POSIX socket HTTP/1.1, keep-alive, streaming chunked, connection cap, SIGPIPE ignore |
-| T08 | Router, Range, static files | ☐ | | |
+| T08 | Router, Range, static files | ☑ | Xanh | URL routing with :id/wildcards, Range parser, StaticFiles with realpath traversal protection and ETag |
 | T09 | Auth | ☐ | | |
 | T10 | API: nodes, folders, tags, trash, search, stats | ☐ | | |
 | T11 | API: upload, content, thumb | ☐ | | |
