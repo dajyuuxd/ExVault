@@ -29,8 +29,11 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$APP/Info.plist"
           lipo -info "$APP/ExVault"
           test -f "$APP/Web/index.html"
+          test -f "$APP/Web/js/app.js"
           mkdir -p out/Payload && cp -R "$APP" out/Payload/
           (cd out && zip -qry ExVault-unsigned.ipa Payload)
+          du -sh "$APP"
+          du -sh out/ExVault-unsigned.ipa
       - uses: actions/upload-artifact@v4
         with:
           name: ExVault-unsigned-ipa

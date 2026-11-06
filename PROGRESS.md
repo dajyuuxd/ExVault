@@ -21,9 +21,18 @@ Agent cập nhật file này sau mỗi task. Chỉ tick khi CI xanh và đã t�
 | T14 | Web: shell, login, i18n, theme, danh sách | ☑ | Xanh | Web shell, login with rate limit countdown, symmetric i18n (vi/en), list/grid views, responsive design |
 | T15 | Web: upload chia khối, thumbnail, nén ảnh client | ☑ | Xanh | 4MB chunked streaming upload with XHR progress & retry, client thumbnail generator (image/video), optional client JPEG compression |
 | T16 | Web: chọn nhiều, đổi tên, nhãn, thùng rác, tìm kiếm, menu | ☑ | Xanh | Multi-selection (Shift/Ctrl/A), context menu & touch long-press, inline rename, tag CRUD, lazy move tree, cluster rendering |
-| T17 | Web: xem trước ảnh/video/pdf/text | ☐ | | |
+| T17 | Web: xem trước ảnh/video/pdf/text | ☑ | Xanh | Full-screen lightbox previewer (zoom/pan, video connection release, audio, PDF, 512KB range text) |
 | T18 | App iOS + KeepAlive + đóng gói IPA | ☐ | | |
 | T19 | Rà soát & tối ưu (tùy chọn) | ☐ | | |
+
+## Hướng dẫn kiểm tra thủ công trên iPhone (T18)
+1. Cài IPA (`ExVault-unsigned.ipa` từ GitHub Actions Artifacts qua AltStore / Sideloadly / TrollStore), mở app: màn hình đen hiển thị Uptime, URL LAN, User, Password, Disk free, Sessions, và Log.
+2. Từ máy tính hoặc thiết bị khác trong cùng mạng Wi-Fi, mở URL (vd: `http://192.168.1.x:8080`), đăng nhập bằng User/Pass trên màn hình iPhone.
+3. Thử tải lên: 1 ảnh, 1 video dung lượng ~100MB, 1 file văn bản `.txt`; mở lightbox xem trước ảnh; phát video và tua timeline (kiểm tra HTTP Range 206).
+4. Để điện thoại 30 phút không chạm: màn hình không bị tự động khóa; server vẫn duy trì kết nối ổn định.
+5. Bấm nút `Dim screen`: màn hình tối hoàn toàn để tiết kiệm pin/chống lưu ảnh OLED, server vẫn chạy; chạm bất kỳ điểm nào trên màn hình để bật sáng lại.
+6. Thoát về màn hình Home (nền): ghi nhận audio im lặng duy trì tiến trình nền.
+7. Đóng ứng dụng (vuốt tắt trong App Switcher) và mở lại: User/Pass được tạo mới ngẫu nhiên; toàn bộ dữ liệu file đã tải lên vẫn nguyên vẹn.
 
 ## Câu hỏi mở
 (không có)
