@@ -11,7 +11,7 @@ public enum CompressionDecision {
 public enum CompressionPolicy {
     public static let neverExtensions: Set<String> = [
         "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif",
-        "mp4", "m4v", "mov", "mkv", "avi", "webm", "wmv", "flv",
+        "mp4", "m4v", "mov", "mkv", "avi", "webm", "wmv", "flv", "3gp", "3g2", "ogv", "ts", "m2ts", "mts", "mpg", "mpeg", "vob",
         "mp3", "aac", "m4a", "flac", "ogg", "opus", "wma",
         "zip", "rar", "7z", "gz", "bz2", "xz", "zst", "tgz", "lz4",
         "apk", "ipa", "jar", "docx", "xlsx", "pptx", "odt", "ods", "odp", "epub"
@@ -19,7 +19,7 @@ public enum CompressionPolicy {
 
     public static let alwaysExtensions: Set<String> = [
         "txt", "md", "log", "csv", "tsv", "json", "xml", "html", "htm",
-        "css", "js", "ts", "svg", "yaml", "yml", "ini", "conf", "sql",
+        "css", "js", "svg", "yaml", "yml", "ini", "conf", "sql",
         "srt", "vtt", "bmp", "tif", "tiff", "wav", "raw", "dng", "psd",
         "iso", "vmdk", "tar", "c", "h", "cpp", "java", "py", "swift"
     ]
@@ -68,13 +68,21 @@ public enum MimeTypes {
         "tif": "image/tiff",
         "tiff": "image/tiff",
         "mp4": "video/mp4",
-        "m4v": "video/x-m4v",
+        "m4v": "video/mp4",
         "mov": "video/quicktime",
         "webm": "video/webm",
         "mkv": "video/x-matroska",
         "avi": "video/x-msvideo",
         "wmv": "video/x-ms-wmv",
         "flv": "video/x-flv",
+        "3gp": "video/3gpp",
+        "3g2": "video/3gpp2",
+        "ogv": "video/ogg",
+        "mts": "video/mp2t",
+        "m2ts": "video/mp2t",
+        "mpg": "video/mpeg",
+        "mpeg": "video/mpeg",
+        "vob": "video/dvd",
         "mp3": "audio/mpeg",
         "m4a": "audio/mp4",
         "aac": "audio/aac",

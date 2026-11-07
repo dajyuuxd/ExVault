@@ -424,7 +424,8 @@ public final class UploadManager {
                 codec = try performCompression(partPath: partPath, blobPath: blobPath, tmpzPath: tmpzPath, size: rec.size, storedSize: &storedSize)
             }
 
-            let effectiveMime = rec.mime.isEmpty ? MimeTypes.mime(forName: rec.name) : rec.mime
+            let isGenericMime = rec.mime.isEmpty || rec.mime == "application/octet-stream" || rec.mime == "binary/octet-stream"
+            let effectiveMime = isGenericMime ? MimeTypes.mime(forName: rec.name) : rec.mime
             let node = try store.createFile(
                 parentId: rec.parentId,
                 name: rec.name,

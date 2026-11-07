@@ -110,7 +110,7 @@ window.EX = window.EX || {};
     if (!node) return false;
     if (node.mime && node.mime.startsWith('video/')) return true;
     const e = EX.ext(node.name);
-    return ['mp4', 'webm', 'mov', 'm4v', 'mkv', 'avi'].includes(e);
+    return ['mp4', 'webm', 'mov', 'm4v', 'mkv', 'avi', '3gp', 'ogv', 'ts'].includes(e);
   };
 
   EX.isPdf = function (node) {

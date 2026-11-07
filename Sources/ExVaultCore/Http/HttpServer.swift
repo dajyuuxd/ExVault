@@ -484,7 +484,7 @@ public final class HttpServer {
 
             var responseHeaders = response.headers
             let userConn = responseHeaders.first { $0.0.caseInsensitiveCompare("connection") == .orderedSame }?.1
-            let shouldClose = (userConn?.lowercased() == "close") || !clientKeepAlive || bodyReader.shouldCloseConnection
+            var shouldClose = (userConn?.lowercased() == "close") || !clientKeepAlive || bodyReader.shouldCloseConnection
 
             responseHeaders.removeAll {
                 $0.0.caseInsensitiveCompare("server") == .orderedSame ||
@@ -539,6 +539,9 @@ public final class HttpServer {
                         let socketWriter = SocketWriter(fd: fd)
                         if length != nil {
                             try writer(socketWriter)
+                            if let expectedLength = length, socketWriter.bytesWritten < expectedLength {
+                                shouldClose = true
+                            }
                         } else {
                             let chunked = ChunkedResponseWriter(raw: socketWriter)
                             try writer(chunked)

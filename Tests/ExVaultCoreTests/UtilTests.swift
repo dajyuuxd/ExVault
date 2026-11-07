@@ -124,6 +124,8 @@ final class UtilTests: XCTestCase {
         XCTAssertEqual(MimeTypes.mime(forName: "data.json"), "application/json")
         XCTAssertEqual(MimeTypes.mime(forName: "photo.jpg"), "image/jpeg")
         XCTAssertEqual(MimeTypes.mime(forName: "clip.mp4"), "video/mp4")
+        XCTAssertEqual(MimeTypes.mime(forName: "clip.m4v"), "video/mp4")
+        XCTAssertEqual(MimeTypes.mime(forName: "clip.3gp"), "video/3gpp")
         XCTAssertEqual(MimeTypes.mime(forName: "song.mp3"), "audio/mpeg")
         XCTAssertEqual(MimeTypes.mime(forName: "doc.pdf"), "application/pdf")
         XCTAssertEqual(MimeTypes.mime(forName: "file.unknownext"), "application/octet-stream")
@@ -138,6 +140,7 @@ final class UtilTests: XCTestCase {
     func testCompressionPolicyDecision() {
         XCTAssertEqual(CompressionPolicy.decide(name: "short.txt", size: 500), .never)
         XCTAssertEqual(CompressionPolicy.decide(name: "video.mp4", size: 2_000_000), .never)
+        XCTAssertEqual(CompressionPolicy.decide(name: "stream.ts", size: 5_000_000), .never)
         XCTAssertEqual(CompressionPolicy.decide(name: "photo.jpg", size: 100_000), .never)
         XCTAssertEqual(CompressionPolicy.decide(name: "source.swift", size: 10_000), .always)
         XCTAssertEqual(CompressionPolicy.decide(name: "log.txt", size: 5_000), .always)

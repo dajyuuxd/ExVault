@@ -313,6 +313,58 @@ final class ApiFilesTests: XCTestCase {
         XCTAssertEqual(trashedGet.status, 404)
     }
 
+    func testUploadVideoGenericMimeResolvesToVideoMp4() throws {
+        let size = 64
+        let dummyData = Data(repeating: 0x00, count: size)
+
+        let createResp = try req(
+            path: "/api/upload",
+            method: "POST",
+            jsonBody: [
+                "name": "sample_clip.mp4",
+                "size": size,
+                "mime": "application/octet-stream",
+                "compress": "auto"
+            ]
+        )
+        XCTAssertEqual(createResp.status, 201)
+        let uploadId = createResp.json?["uploadId"] as! String
+
+        let putResp = try req(
+            path: "/api/upload/\(uploadId)?offset=0",
+            method: "PUT",
+            rawBody: dummyData,
+            customHeaders: ["Content-Length": "\(size)"]
+        )
+        XCTAssertEqual(putResp.status, 200)
+
+        _ = try req(path: "/api/upload/\(uploadId)/finish", method: "POST")
+        var nodeObj: [String: Any]?
+        for _ in 0..<50 {
+            Thread.sleep(forTimeInterval: 0.05)
+            let poll = try req(path: "/api/upload/\(uploadId)")
+            if poll.json?["state"] as? String == "done" {
+                nodeObj = poll.json?["node"] as? [String: Any]
+                break
+            }
+        }
+        XCTAssertNotNil(nodeObj)
+        let nodeId = nodeObj?["id"] as! String
+
+        // Node in database should have effective mime video/mp4
+        XCTAssertEqual(nodeObj?["mime"] as? String, "video/mp4")
+
+        // Streaming GET /api/files/:id/content should return Content-Type: video/mp4
+        let getResp = try req(
+            path: "/api/files/\(nodeId)/content",
+            customHeaders: ["Range": "bytes=0-1"]
+        )
+        XCTAssertEqual(getResp.status, 206)
+        XCTAssertEqual(getResp.headers["content-type"], "video/mp4")
+        XCTAssertEqual(getResp.headers["content-length"], "2")
+        XCTAssertEqual(getResp.headers["content-range"], "bytes 0-1/64")
+    }
+
     func testThumbnailManagement() throws {
         // Create an empty file first
         let f = try req(

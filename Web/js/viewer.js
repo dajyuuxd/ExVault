@@ -23,6 +23,11 @@ window.EX = window.EX || {};
     prevHash: '',
 
     open(nodeId, list) {
+      // Guard against redundant open calls (e.g. hashchange triggered after open)
+      if (EX.viewer.isOpen && EX.viewer.currentList[EX.viewer.currentIndex] && EX.viewer.currentList[EX.viewer.currentIndex].id === nodeId) {
+        return;
+      }
+
       // 1. Build list of viewable items
       const sourceList = list && list.length > 0 ? list : (EX.state.items || []);
       const viewable = sourceList.filter((n) => n && n.kind === 'file' && isViewableNode(n));
@@ -414,10 +419,16 @@ window.EX = window.EX || {};
     EX.viewer.activeMediaEl = video;
 
     video.onerror = () => {
+      const err = video.error;
+      console.error('[ExVault] Video playback error:', err, 'code:', err ? err.code : 'unknown', 'src:', video.src);
+      let errorMsg = EX.t('viewer.unsupported_video');
+      if (err && err.code === 2) {
+        errorMsg = EX.t('viewer.video_network_error') || EX.t('err.busy');
+      }
       container.textContent = '';
       container.appendChild(h('div', { class: 'viewer-error-box' },
         h('span', { style: { fontSize: '48px' } }, '⚠️'),
-        h('p', {}, EX.t('viewer.unsupported_video')),
+        h('p', {}, errorMsg),
         h('button', {
           class: 'btn btn-primary',
           onclick: () => window.open(EX.api.contentUrl(node.id, true), '_self')

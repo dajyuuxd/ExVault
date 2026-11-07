@@ -112,6 +112,7 @@ window.EX = window.EX || {};
     'viewer.prev': 'Trước',
     'viewer.next': 'Sau',
     'viewer.unsupported_video': 'Trình duyệt không hỗ trợ phát định dạng video này.',
+    'viewer.video_network_error': 'Lỗi kết nối khi tải video. Vui lòng thử lại.',
     'viewer.text_truncated': 'Tệp lớn hơn 512 KB, chỉ hiển thị phần đầu. Vui lòng tải về để xem đầy đủ.',
     'viewer.loading': 'Đang tải...'
   };
@@ -223,6 +224,7 @@ window.EX = window.EX || {};
     'viewer.prev': 'Previous',
     'viewer.next': 'Next',
     'viewer.unsupported_video': 'Browser does not support playing this video format.',
+    'viewer.video_network_error': 'Network error loading video. Please try again.',
     'viewer.text_truncated': 'File is larger than 512 KB, showing preview only. Please download to view full content.',
     'viewer.loading': 'Loading...'
   };

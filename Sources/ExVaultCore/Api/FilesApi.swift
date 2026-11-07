@@ -223,7 +223,12 @@ public enum FilesApi: ApiModule {
     }
 
     private static func formatContentType(mime: String, name: String) -> String {
-        let baseMime = mime.isEmpty ? MimeTypes.mime(forName: name) : mime
+        let baseMime: String
+        if mime.isEmpty || mime == "application/octet-stream" || mime == "binary/octet-stream" {
+            baseMime = MimeTypes.mime(forName: name)
+        } else {
+            baseMime = mime
+        }
         if baseMime.hasPrefix("text/") || baseMime == "application/json" || baseMime == "application/xml" || baseMime == "application/javascript" {
             if !baseMime.contains("charset=") {
                 return "\(baseMime); charset=utf-8"
